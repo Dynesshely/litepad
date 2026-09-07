@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>临时草稿本 · 自动保存</title>
+<style>
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  :root {
+    --bg: #ffffff; --fg: #1f2328; --muted: #656d76;
+    --border: #d0d7de; --panel: #f6f8fa; --accent: #0969da;
+    --ok: #1a7f37; --err: #cf222e; --warn: #9a6700;
+    --shadow: rgba(140,149,159,0.2);
+  }
+  html[data-theme="dark"] {
+    --bg: #0d1117; --fg: #e6edf3; --muted: #8b949e;
+    --border: #30363d; --panel: #161b22; --accent: #58a6ff;
+    --ok: #3fb950; --err: #f85149; --warn: #d29922;
+    --shadow: rgba(1,4,9,0.6);
+  }
+  html, body { height: 100%; }
+  body {
+    margin: 0; display: flex; flex-direction: column;
+    background: var(--bg); color: var(--fg);
+    font: 13px/1.5 -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", Roboto, Helvetica, Arial, sans-serif;
+  }
+  button { font: inherit; }
+
+  /* ---------- toolbar ---------- */
+  #toolbar {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+    padding: 6px 10px; background: var(--panel);
+    border-bottom: 1px solid var(--border);
+  }
+  .brand { font-weight: 600; margin-right: 8px; white-space: nowrap; }
+  .tb {
+    border: 1px solid var(--border); background: var(--bg); color: var(--fg);
+    border-radius: 6px; padding: 3px 9px; cursor: pointer; white-space: nowrap;
+  }
+  .tb:hover { border-color: var(--accent); color: var(--accent); }
+  .tb.danger:hover { border-color: var(--err); color: var(--err); }
+  .spacer { flex: 1; }
+
+  /* ---------- banner ---------- */
+  #banner {
+    display: none; align-items: flex-start; gap: 8px;
+    padding: 6px 10px; border-bottom: 1px solid var(--border); font-size: 12px;
+  }
+  #banner.info    { background: var(--panel); color: var(--muted); }
+  #banner.warn    { background: #fff8c5; color: #7d4e00; }
+  #banner.error   { background: #ffebe9; color: #b62324; }
+  html[data-theme="dark"] #banner.warn  { background: #2d2200; color: #d29922; }
+  html[data-theme="dark"] #banner.error { background: #311515; color: #f85149; }
+  #banner.show { display: flex; }
+  #bannerText { flex: 1; white-space: pre-wrap; word-break: break-word; }
+  #bannerClose { cursor: pointer; border: none; background: none; color: inherit; font-weight: 700; }
+
+  /* ---------- layout ---------- */
+  #layout { flex: 1; display: flex; min-height: 0; }
+  #sidebar {
+    width: 290px; min-width: 290px; border-right: 1px solid var(--border);
+    background: var(--panel); overflow-y: auto; display: flex; flex-direction: column;
+  }
+  .side-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 10px; font-weight: 600; border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; background: var(--panel);
+  }
+  #docList { list-style: none; margin: 0; padding: 4px; }
+  #docList li {
+    display: flex; align-items: center; gap: 6px;
+    padding: 5px 6px; border-radius: 6px; cursor: pointer;
+  }
+  #docList li:hover { background: var(--bg); }
+  #docList li.active { background: var(--bg); box-shadow: inset 2px 0 0 var(--accent); }
+  .doc-main { flex: 1; min-width: 0; }
+  .doc-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; font-size: 12.5px; }
+  .doc-meta  { color: var(--muted); font-size: 11px; }
+  .del {
+    border: none; background: none; color: var(--muted); cursor: pointer;
+    font-size: 13px; padding: 2px 4px; border-radius: 4px;
+  }
+  .del:hover { color: var(--err); background: var(--bg); }
+  #sideEmpty { padding: 16px 12px; color: var(--muted); text-align: center; }
+
+  #main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  #editor {
+    flex: 1; width: 100%; border: none; outline: none; resize: none;
+    background: var(--bg); color: var(--fg);
+    font: 14px/1.7 "SFMono-Regular", Consolas, "JetBrains Mono", Menlo, "Liberation Mono", monospace;
+    padding: 14px 18px; caret-color: var(--accent);
+  }
+  #editor::placeholder { color: var(--muted); }
+
+  /* ---------- status bar ---------- */
+  #statusbar {
+    display: flex; align-items: center; gap: 14px;
+    padding: 3px 12px; border-top: 1px solid var(--border);
+    background: var(--panel); color: var(--muted); font-size: 11.5px;
+    flex-wrap: wrap;
+  }
+  #saveState.ok    { color: var(--ok); }
+  #saveState.err   { color: var(--err); }
+  #saveState.dirty { color: var(--warn); }
+  #quota.warn { color: var(--warn); font-weight: 600; }
+  #statChars { margin-left: auto; }
+
+  /* ---------- modal ---------- */
+  #overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+    display: flex; align-items: center; justify-content: center; z-index: 50;
+  }
+  #modal {
+    width: min(560px, calc(100vw - 32px)); max-height: 76vh;
+    background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+    box-shadow: 0 8px 32px var(--shadow);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  #modalHead {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px; border-bottom: 1px solid var(--border); font-weight: 600;
+  }
+  #modalBody { overflow-y: auto; padding: 8px 10px; flex: 1; }
+  #histList { list-style: none; margin: 0; padding: 0; }
+  #histList li {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 8px; border-radius: 6px;
+  }
+  #histList li:hover { background: var(--panel); }
+  .hist-time { font-family: Consolas, monospace; font-size: 12px; min-width: 150px; }
+  .hist-size { color: var(--muted); font-size: 11px; flex: 1; }
+  .muted { color: var(--muted); font-size: 12px; }
+
+  /* ---------- toast ---------- */
+  #toast {
+    position: fixed; right: 16px; bottom: 40px; z-index: 80;
+    background: #1f2328; color: #fff; padding: 8px 14px; border-radius: 8px;
+    font-size: 12.5px; opacity: 0; transition: opacity 0.2s; pointer-events: none;
+    max-width: 60vw; box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  }
+  html[data-theme="dark"] #toast { background: #e6edf3; color: #0d1117; }
+  #toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<header id="toolbar">
+  <span class="brand">✎ 临时草稿本</span>
+  <button id="btnNew"  class="tb" title="新开一篇独立草稿">＋ 新建</button>
+  <button id="btnList" class="tb" title="查看/管理所有草稿">📄 草稿列表</button>
+  <button id="btnHistory" class="tb" title="当前草稿的历史快照，可恢复到几分钟前">🕘 历史快照</button>
+  <button id="btnBack1" class="tb" title="把内容换回上一次自动保存的版本（再点一次可换回）">↩ 回退一步</button>
+  <button id="btnExport" class="tb" title="把当前草稿另存为 .txt 文件">⬇ 导出 .txt</button>
+  <button id="btnBackup" class="tb" title="把全部草稿打包成 JSON 备份文件">💾 备份全部</button>
+  <button id="btnImport" class="tb" title="从 JSON 备份文件合并导入草稿">📂 导入备份</button>
+  <input id="fileInput" type="file" accept=".json,application/json" hidden>
+  <span class="spacer"></span>
+  <button id="btnDark" class="tb" title="切换深浅色主题">🌙</button>
+</header>
+
+<div id="banner">
+  <span id="bannerText"></span>
+  <button id="bannerClose" title="关闭">✕</button>
+</div>
+
+<div id="layout">
+  <aside id="sidebar" hidden>
+    <div class="side-head">
+      <span>我的草稿</span>
+      <span><button id="btnNew2" class="tb" style="padding:1px 7px">＋ 新建</button>
+            <button id="sideClose" class="tb" style="padding:1px 7px">✕</button></span>
+    </div>
+    <ul id="docList"></ul>
+  </aside>
+
+  <main id="main">
+    <textarea id="editor" spellcheck="false" placeholder="在这里开始输入……&#10;&#10;内容会自动保存到本浏览器的 localStorage：无需 Ctrl+S、无需任何手动保存，直接关闭标签页、刷新、甚至关机都不丢。&#10;&#10;· Ctrl+S 已被拦截（你不需要保存文件）&#10;· Tab 键插入两个空格缩进&#10;· 想再开一篇临时稿：点「＋ 新建」或新开一个浏览器标签打开本页&#10;· 担心手滑删光？「🕘 历史快照」和「↩ 回退一步」可以救回来"></textarea>
+  </main>
+</div>
+
+<footer id="statusbar">
+  <span id="saveState">就绪</span>
+  <span id="quota"></span>
+  <span id="statChars"></span>
+</footer>
+
+<div id="overlay" hidden>
+  <div id="modal">
+    <div id="modalHead">
+      <span>历史快照</span>
+      <button id="histClose" class="tb">✕ 关闭</button>
+    </div>
+    <div id="modalBody">
+      <p class="muted" style="margin:4px 8px 8px">输入过程中每隔约 20 秒自动留一份快照（最多 40 份）。点时间即可把编辑区恢复到该版本。</p>
+      <ul id="histList"></ul>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var $ = function (id) { return document.getElementById(id); };
+  var ta = $('editor');
+  var NS = 'dsh.scratch.v1';
+  var INDEX_KEY = NS + '.index';
+  var UI_KEY = NS + '.ui';
+  var HINT_KEY = NS + '.fileHintShown';
+  var DOC = function (id) { return NS + '.doc.' + id; };
+  var BAK = function (id) { return NS + '.doc.' + id + '.bak'; };
+  var HIST = function (id) { return NS + '.doc.' + id + '.hist'; };
+  var SAVE_DEBOUNCE = 400;      // 毫秒：停止输入多久后落盘
+  var SNAP_INTERVAL = 20000;    // 毫秒：两次快照的最小间隔
+  var SNAP_MAX = 40;            // 每篇最多保留的快照数
+  var SNAP_MAX_CHARS = 600000;  // 每篇快照合计字符上限
+
+  /* ================= 存储层（localStorage → sessionStorage → 内存 逐级降级） ================= */
+  var storeOk = false;
+  var memStore = {};
+  var degraded = false; // 最近一次写未能进入 localStorage
+
+  function detectStore() {
+    try {
+      var k = NS + '.probe';
+      localStorage.setItem(k, '1');
+      localStorage.removeItem(k);
+      return true;
+    } catch (e) { return false; }
+  }
+  function rawGet(k) {
+    if (storeOk) { try { var v = localStorage.getItem(k); if (v !== null) return v; } catch (e) {} }
+    try { var s = sessionStorage.getItem(k); if (s !== null) return s; } catch (e2) {}
+    if (k in memStore) return memStore[k];
+    return null;
+  }
+  function rawSet(k, v) {
+    if (storeOk) {
+      try { localStorage.setItem(k, v); return 'ls'; } catch (e) {}
+    }
+    try { sessionStorage.setItem(k, v); return 'sess'; } catch (e2) {}
+    memStore[k] = v;
+    return 'mem';
+  }
+  function rawDel(k) {
+    if (storeOk) { try { localStorage.removeItem(k); } catch (e) {} }
+    try { sessionStorage.removeItem(k); } catch (e2) {}
+    delete memStore[k];
+  }
+
+  /* ================= UI 小工具 ================= */
+  var toastTimer = null;
+  function toast(msg) {
+    var el = $('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.classList.remove('show'); }, 2400);
+  }
+  var bannerTimer = null;
+  function banner(msg, cls, sticky) {
+    $('bannerText').textContent = msg;
+    $('banner').className = 'show ' + (cls || 'info');
+    $('banner').classList.add(cls || 'info');
+    $('banner').classList.add('show');
+    clearTimeout(bannerTimer);
+    if (!sticky) bannerTimer = setTimeout(function () { $('banner').classList.remove('show'); }, 8000);
+  }
+  $('bannerClose').addEventListener('click', function () {
+    $('banner').classList.remove('show');
+    if (!storeOk) return;
+    try { localStorage.setItem(HINT_KEY, '1'); } catch (e) {}
+  });
+
+  function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+  function fmtFull(ts) {
+    var d = new Date(ts);
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) +
+           ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds());
+  }
+  function fmtRel(ts) {
+    var diff = Date.now() - ts;
+    if (diff < 60e3) return '刚刚';
+    if (diff < 3600e3) return Math.floor(diff / 60e3) + ' 分钟前';
+    if (diff < 86400e3) return Math.floor(diff / 3600e3) + ' 小时前';
+    return fmtFull(ts).slice(0, 16);
+  }
+  function titleOf(text) {
+    var lines = String(text).split('\n');
+    for (var i = 0; i < lines.length; i++) {
+      var t = lines[i].trim();
+      if (t) return t.length > 40 ? t.slice(0, 40) + '…' : t;
+    }
+    return '未命名';
+  }
+  function safeName(s) { return String(s).replace(/[\\/:*?"<>|\s]+/g, '_').slice(0, 40) || 'untitled'; }
+  function download(name, blob) {
+    var a = document.createElement('a');
+    var url = URL.createObjectURL(blob);
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 800);
+  }
+
+  /* ================= 状态 ================= */
+  var index = {};
+  var curId = null;
+  var lastSavedText = '';
+  var dirty = false;
+  var saveTimer = null;
+  var lastSnapAt = 0;
+  var uiPref = { dark: null };
+
+  function loadIndex() {
+    try { var raw = rawGet(INDEX_KEY); return raw ? JSON.parse(raw) : {}; } catch (e) { return {}; }
+  }
+  function commitIndex() { rawSet(INDEX_KEY, JSON.stringify(index)); }
+  function makeId() {
+    return 'd' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+  }
+  function readHist(id) {
+    try { var raw = rawGet(HIST(id)); return raw ? JSON.parse(raw) : []; } catch (e) { return []; }
+  }
+  function writeHist(id, arr) { rawSet(HIST(id), JSON.stringify(arr)); }
+
+  function addSnapshot(id, text) {
+    if (!text) return;
+    var h = readHist(id);
+    var last = h[h.length - 1];
+    if (last && last.c === text) return;
+    h.push({ t: Date.now(), c: text });
+    var total = 0, i;
+    for (i = 0; i < h.length; i++) total += h[i].c.length;
+    while (h.length > SNAP_MAX || total > SNAP_MAX_CHARS) {
+      var gone = h.shift();
+      total -= gone ? gone.c.length : 0;
+    }
+    writeHist(id, h);
+  }
+
+  /* ================= 自动保存核心 ================= */
+  function schedulePersist() {
+    dirty = true;
+    setSaveState('dirty', '自动保存中…');
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(persistNow, SAVE_DEBOUNCE);
+  }
+  function persistNow(force) {
+    clearTimeout(saveTimer);
+    if (!curId) return;
+    var text = ta.value;
+    var changed = force || text !== lastSavedText;
+    if (!changed) { if (dirty) { dirty = false; setSaveState('ok', '已自动保存 ' + fmtFull(Date.now()).slice(11)); } return; }
+
+    var prev = rawGet(DOC(curId));
+    if (prev !== null && prev !== text) rawSet(BAK(curId), prev);   // 双键轮换备份
+    var res = rawSet(DOC(curId), text);
+
+    if (res === 'sess' || res === 'mem') {
+      degraded = true;
+      banner('⚠ localStorage 不可用或已写满，内容目前只暂存在浏览器会话中（关闭窗口会丢失）。请「💾 备份全部」导出，或到「📄 草稿列表」删除旧草稿释放空间。', 'error', true);
+    } else if (degraded) {
+      degraded = false;
+      $('banner').classList.remove('show');
+    }
+
+    lastSavedText = text;
+    dirty = false;
+    if (Date.now() - lastSnapAt > SNAP_INTERVAL) { addSnapshot(curId, text); lastSnapAt = Date.now(); }
+
+    index[curId] = index[curId] || { id: curId, createdAt: Date.now() };
+    index[curId].updatedAt = Date.now();
+    index[curId].title = titleOf(text);
+    commitIndex();
+
+    setSaveState('ok', '已自动保存 ' + fmtFull(Date.now()).slice(11));
+    updateStats();
+    refreshQuota(true);
+    if (!$('sidebar').hidden) renderDocList();
+  }
+  function setSaveState(cls, msg) {
+    var el = $('saveState');
+    el.className = cls;
+    el.textContent = msg;
+  }
+
+  /* ================= 文档切换 / 新建 / 打开 ================= */
+  function openDoc(id, keepHash) {
+    persistNow();
+    if (!index[id]) {
+      index[id] = { id: id, title: '未命名', createdAt: Date.now(), updatedAt: Date.now() };
+      commitIndex();
+    }
+    curId = id;
+    var text = rawGet(DOC(id));
+    var bak = rawGet(BAK(id));
+    var content = text !== null ? text : (bak !== null ? bak : '');
+    ta.value = content;
+    lastSavedText = content;
+    dirty = false;
+    lastSnapAt = Date.now();
+    addSnapshot(id, content);
+    setSaveState('ok', content ? '已从本地恢复' : '空白草稿');
+    updateMeta();
+    updateStats();
+    renderDocList();
+    refreshQuota(true);
+    if (!keepHash) history.replaceState(null, '', '#' + encodeURIComponent(id));
+  }
+  function newDoc() {
+    persistNow();
+    var id = makeId();
+    index[id] = { id: id, title: '未命名', createdAt: Date.now(), updatedAt: Date.now() };
+    curId = id;
+    ta.value = '';
+    lastSavedText = '';
+    dirty = false;
+    history.replaceState(null, '', '#' + encodeURIComponent(id));
+    commitIndex();
+    updateMeta();
+    updateStats();
+    renderDocList();
+    toast('已新建一篇空白草稿');
+    ta.focus();
+  }
+  function switchTo(id) {
+    if (id === curId) { if ($('sidebar').hidden === false) $('sidebar').hidden = true; return; }
+    openDoc(id);
+    if (!$('sidebar').hidden) $('sidebar').hidden = true;
+  }
+  function deleteDoc(id) {
+    var title = (index[id] && index[id].title) || '未命名';
+    if (!confirm('删除草稿「' + title + '」？\n该草稿的正文、历史快照将一并删除，无法恢复（除非你之前导出过备份）。')) return;
+    rawDel(DOC(id)); rawDel(BAK(id)); rawDel(HIST(id));
+    delete index[id];
+    commitIndex();
+    if (curId === id) {
+      curId = null; ta.value = ''; lastSavedText = '';
+      newDoc();
+    } else { renderDocList(); }
+  }
+
+  /* ================= UI 刷新 ================= */
+  function updateMeta() {
+    var t = (index[curId] && index[curId].title) || '未命名';
+    document.title = t + ' — 临时草稿本';
+    $('btnHistory').title = '当前草稿的历史快照，可恢复到几分钟前（' + readHist(curId).length + ' 份）';
+  }
+  function updateStats() {
+    var n = ta.value.length;
+    var lines = ta.value ? ta.value.split('\n').length : 0;
+    $('statChars').textContent = n ? (n + ' 字符 · ' + lines + ' 行') : '';
+  }
+  function renderDocList() {
+    var ul = $('docList');
+    ul.innerHTML = '';
+    var ids = Object.keys(index).sort(function (a, b) { return index[b].updatedAt - index[a].updatedAt; });
+    if (!ids.length) {
+      var li = document.createElement('li');
+      li.id = 'sideEmpty';
+      li.textContent = '还没有草稿。关闭此面板，直接输入即可自动创建。';
+      ul.appendChild(li);
+      return;
+    }
+    ids.forEach(function (id) {
+      var e = index[id];
+      var li = document.createElement('li');
+      if (id === curId) li.className = 'active';
+
+      var main = document.createElement('div');
+      main.className = 'doc-main';
+      var t = document.createElement('div'); t.className = 'doc-title'; t.textContent = e.title;
+      var m = document.createElement('div'); m.className = 'doc-meta';
+      m.textContent = fmtRel(e.updatedAt);
+      main.appendChild(t); main.appendChild(m);
+
+      var del = document.createElement('button');
+      del.className = 'del'; del.textContent = '🗑'; del.title = '删除这篇草稿';
+      del.addEventListener('click', function (ev) { ev.stopPropagation(); deleteDoc(id); });
+
+      li.appendChild(main); li.appendChild(del);
+      li.addEventListener('click', function () { switchTo(id); });
+      ul.appendChild(li);
+    });
+  }
+
+  /* ================= 配额显示 ================= */
+  var lastQuotaAt = 0;
+  function refreshQuota(force) {
+    var now = Date.now();
+    if (!force && now - lastQuotaAt < 2000) return;
+    lastQuotaAt = now;
+    var el = $('quota');
+    if (!storeOk) { el.textContent = ''; return; }
+    try {
+      var used = 0;
+      var keys = Object.keys(localStorage);
+      for (var i = 0; i < keys.length; i++) {
+        var v = localStorage.getItem(keys[i]);
+        used += (keys[i].length + (v ? v.length : 0)) * 2;
+      }
+      var txt = '本页源占用 ' + (used >= 1048576 ? (used / 1048576).toFixed(2) + ' MB' : Math.round(used / 1024) + ' KB');
+      if (used > 4e6) { el.className = 'warn'; txt += ' ⚠ 接近 5MB 上限，建议导出备份并清理'; }
+      else { el.className = ''; }
+      el.textContent = txt;
+    } catch (e) { el.textContent = ''; }
+  }
+
+  /* ================= 导出 / 导入 ================= */
+  function exportTxt() {
+    persistNow();
+    if (!ta.value) { toast('当前草稿为空，没有可导出的内容'); return; }
+    var name = '草稿-' + safeName(index[curId].title) + '-' + fmtFull(Date.now()).replace(/[-: ]/g, '').slice(0, 14) + '.txt';
+    download(name, new Blob([ta.value], { type: 'text/plain;charset=utf-8' }));
+    toast('已导出 ' + name);
+  }
+  function backupAll() {
+    persistNow();
+    var ids = Object.keys(index);
+    if (!ids.length) { toast('还没有任何草稿'); return; }
+    var docs = ids.map(function (id) {
+      return { id: id, title: index[id].title, createdAt: index[id].createdAt, updatedAt: index[id].updatedAt, content: rawGet(DOC(id)) || '' };
+    });
+    var payload = { app: 'dsh-scratch', version: 1, exportedAt: Date.now(), docs: docs };
+    var name = '草稿本备份-' + fmtFull(Date.now()).replace(/[-: ]/g, '').slice(0, 14) + '.json';
+    download(name, new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' }));
+    toast('已备份 ' + docs.length + ' 篇草稿');
+  }
+  function importBackup(file) {
+    var reader = new FileReader();
+    reader.onload = function () {
+      try {
+        var data = JSON.parse(String(reader.result));
+        if (!data || data.app !== 'dsh-scratch' || !Array.isArray(data.docs)) throw new Error('bad');
+        var added = 0, updated = 0, skipped = 0;
+        data.docs.forEach(function (d) {
+          if (!d || typeof d.id !== 'string') return;
+          var local = index[d.id];
+          if (!local) {
+            index[d.id] = { id: d.id, title: d.title || '未命名', createdAt: d.createdAt || Date.now(), updatedAt: d.updatedAt || Date.now() };
+            rawSet(DOC(d.id), typeof d.content === 'string' ? d.content : '');
+            added++;
+          } else if ((d.updatedAt || 0) > (local.updatedAt || 0)) {
+            local.title = d.title || local.title; local.updatedAt = d.updatedAt;
+            rawSet(DOC(d.id), typeof d.content === 'string' ? d.content : '');
+            updated++;
+          } else {
+            skipped++;
+          }
+        });
+        commitIndex();
+        renderDocList();
+        refreshQuota(true);
+        if (added + updated > 0 && curId) {
+          var content = rawGet(DOC(curId));
+          if (content !== null) { ta.value = content; lastSavedText = content; dirty = false; }
+        }
+        toast('导入完成：新增 ' + added + ' 篇，更新 ' + updated + ' 篇，跳过 ' + skipped + ' 篇');
+      } catch (e) {
+        toast('导入失败：文件格式不正确');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  /* ================= 历史快照面板 ================= */
+  function openHist() {
+    if (!curId) return;
+    var h = readHist(curId);
+    var ul = $('histList');
+    ul.innerHTML = '';
+    if (!h.length) {
+      var li = document.createElement('li');
+      li.className = 'muted';
+      li.textContent = '暂无快照 —— 输入内容后会自动开始记录。';
+      ul.appendChild(li);
+    }
+    h.slice().reverse().forEach(function (s, i) {
+      var li = document.createElement('li');
+      var time = document.createElement('span'); time.className = 'hist-time'; time.textContent = fmtFull(s.t);
+      var size = document.createElement('span'); size.className = 'hist-size';
+      size.textContent = s.c.length + ' 字符';
+      var btn = document.createElement('button'); btn.className = 'tb'; btn.textContent = '恢复';
+      btn.addEventListener('click', function () {
+        if (!confirm('恢复到 ' + fmtFull(s.t) + ' 的版本？\n当前内容会自动存为历史，不会立即丢失。')) return;
+        ta.value = s.c;
+        lastSavedText = s.c;
+        dirty = false;
+        lastSnapAt = Date.now();
+        persistNow(true); // 强制把恢复的版本写入主键（当前版本自动转入“回退一步”的重做位）
+        $('overlay').hidden = true;
+        updateStats();
+        toast('已恢复到 ' + fmtFull(s.t).slice(11) + ' 的版本');
+      });
+      li.appendChild(time); li.appendChild(size); li.appendChild(btn);
+      ul.appendChild(li);
+    });
+    $('overlay').hidden = false;
+  }
+  function undoOneStep() {
+    if (!curId) return;
+    persistNow(); // 先把当前编辑状态落盘，再交换主/备键
+    var cur = rawGet(DOC(curId));
+    var bak = rawGet(BAK(curId));
+    if (bak === null) { toast('暂无更早的版本可回退'); return; }
+    if (cur !== null) rawSet(BAK(curId), cur); // 当前版存入重做位
+    rawSet(DOC(curId), bak);                   // 旧版成为当前内容并真正持久化
+    ta.value = bak;
+    lastSavedText = bak;
+    dirty = false;
+    index[curId].updatedAt = Date.now();
+    commitIndex();
+    setSaveState('ok', '已回退，可再点一次换回');
+    updateStats();
+    refreshQuota(true);
+    toast('已回退到上一次自动保存的版本（可再点一次换回）');
+  }
+
+  /* ================= 主题 ================= */
+  function loadUiPref() {
+    try {
+      var raw = rawGet(UI_KEY);
+      if (raw) uiPref = JSON.parse(raw);
+    } catch (e) {}
+    if (typeof uiPref.dark !== 'boolean') {
+      uiPref.dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+  }
+  function applyTheme() {
+    document.documentElement.dataset.theme = uiPref.dark ? 'dark' : 'light';
+    $('btnDark').textContent = uiPref.dark ? '☀️' : '🌙';
+  }
+  function toggleTheme() {
+    uiPref.dark = !uiPref.dark;
+    rawSet(UI_KEY, JSON.stringify(uiPref));
+    applyTheme();
+  }
+
+  /* ================= 事件绑定 ================= */
+  ta.addEventListener('input', function (e) {
+    if (e.isComposing) return; // 中文输入法组词中，等 compositionend
+    schedulePersist();
+    updateStats();
+  });
+  ta.addEventListener('compositionend', function () { schedulePersist(); });
+  ta.addEventListener('keydown', function (e) {
+    if (e.key === 'Tab' && !e.isComposing) {
+      e.preventDefault(); // 阻止 Tab 把焦点移出编辑区
+      var s = ta.selectionStart;
+      if (s === ta.selectionEnd) {
+        ta.setRangeText('  ', s, s, 'end');
+        schedulePersist();
+        updateStats();
+      }
+    }
+  });
+  document.addEventListener('keydown', function (e) {
+    if ((e.ctrlKey || e.metaKey) && String(e.key).toLowerCase() === 's') {
+      e.preventDefault();
+      persistNow();
+      toast('无需手动保存：内容已自动保存于 ' + fmtFull(Date.now()).slice(11));
+    }
+  });
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'hidden') persistNow();
+  });
+  window.addEventListener('pagehide', persistNow);
+  window.addEventListener('beforeunload', persistNow);
+  window.addEventListener('hashchange', function () {
+    var h = location.hash && location.hash.length > 1 ? decodeURIComponent(location.hash.slice(1)) : '';
+    if (h && index[h]) openDoc(h, true);
+    else if (!h) newDoc();
+  });
+
+  $('btnNew').addEventListener('click', newDoc);
+  $('btnNew2').addEventListener('click', newDoc);
+  $('btnList').addEventListener('click', function () {
+    var sb = $('sidebar');
+    sb.hidden = !sb.hidden;
+    if (!sb.hidden) renderDocList();
+  });
+  $('sideClose').addEventListener('click', function () { $('sidebar').hidden = true; });
+  $('btnHistory').addEventListener('click', openHist);
+  $('histClose').addEventListener('click', function () { $('overlay').hidden = true; });
+  $('overlay').addEventListener('click', function (e) { if (e.target === this) this.hidden = true; });
+  $('btnBack1').addEventListener('click', undoOneStep);
+  $('btnExport').addEventListener('click', exportTxt);
+  $('btnBackup').addEventListener('click', backupAll);
+  $('btnImport').addEventListener('click', function () { $('fileInput').click(); });
+  $('fileInput').addEventListener('change', function () {
+    if (this.files && this.files[0]) importBackup(this.files[0]);
+    this.value = '';
+  });
+  $('btnDark').addEventListener('click', toggleTheme);
+
+  /* ================= 启动 ================= */
+  function boot() {
+    storeOk = detectStore();
+    index = loadIndex();
+    loadUiPref();
+    applyTheme();
+
+    if (!storeOk) {
+      banner('⚠ 此浏览器当前不允许持久化存储（localStorage 不可用，常见于部分隐私模式或受限环境）。内容仍会自动保存，但只在本页会话内有效，关闭页面即丢失。请尽快「💾 备份全部」到本地文件。', 'error', true);
+    } else if (location.protocol === 'file:' && !rawGet(HINT_KEY)) {
+      banner('已开启自动保存。首次使用请自测一次：输入几行文字 → 按 F5 刷新 → 内容应原样保留。若刷新后变空，说明该浏览器在 file:// 打开方式下不持久化 localStorage，请改在本机跑一个静态服务（如在该目录执行 python3 -m http.server 后访问 http://localhost:8000/scratch.html）再使用本工具。', 'info', true);
+    }
+
+    var h = location.hash && location.hash.length > 1 ? decodeURIComponent(location.hash.slice(1)) : '';
+    if (h && index[h]) {
+      openDoc(h, true);
+    } else {
+      var id = makeId();
+      index[id] = { id: id, title: '未命名', createdAt: Date.now(), updatedAt: Date.now() };
+      curId = id;
+      history.replaceState(null, '', '#' + encodeURIComponent(id));
+      commitIndex();
+      updateMeta();
+      updateStats();
+      setSaveState('', '就绪');
+    }
+    renderDocList();
+    refreshQuota(true);
+    ta.focus();
+    ta.setSelectionRange(0, 0);
+  }
+
+  boot();
+})();
+</script>
+<noscript><p style="padding:20px;font-family:sans-serif">本工具需要启用 JavaScript 才能在浏览器本地自动保存内容。</p></noscript>
+</body>
+</html>

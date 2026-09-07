@@ -1,0 +1,26 @@
+{
+  "name": "scratch-vue",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "临时草稿本：纯本地 localStorage 自动保存的网页编辑器（Vue 3 + Tailwind CSS + Monaco Editor）",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "monaco-editor": "^0.56.0",
+    "vue": "^3.5.42"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@vitejs/plugin-vue": "^6.0.8",
+    "@types/node": "^26.5.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "~5.9.0",
+    "vite": "^8.2.2",
+    "vue-tsc": "^3.3.11"
+  }
+}

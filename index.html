@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <title>临时草稿本 · 自动保存</title>
+    <script>
+      // 在应用挂载前恢复主题偏好，避免深浅色闪烁（FOUC）
+      ;(function () {
+        try {
+          var p = JSON.parse(localStorage.getItem('dsh.scratch.v1.ui') || 'null')
+          var dark =
+            p && typeof p.dark === 'boolean'
+              ? p.dark
+              : window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+          if (dark) document.documentElement.classList.add('dark')
+        } catch (e) {
+          /* 忽略 */
+        }
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,85 @@
+@import 'tailwindcss';
+
+/* 深色模式改为显式 .dark class 控制（与首页防闪烁脚本配合） */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ---------- 全局基础 ---------- */
+html,
+body,
+#app {
+  height: 100%;
+}
+
+body {
+  @apply antialiased;
+  overscroll-behavior: none;
+}
+
+/* ---------- 细滚动条 ---------- */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(161 161 170 / 0.5) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  border-radius: 4px;
+  background: rgb(161 161 170 / 0.5);
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ---------- 通用按钮 ---------- */
+@layer components {
+  .btn {
+    @apply inline-flex cursor-pointer items-center gap-1 rounded-md border border-zinc-300 bg-white px-2 py-1 text-xs font-medium text-zinc-700 transition-colors select-none hover:border-indigo-400 hover:text-indigo-600 focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:outline-none active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:border-indigo-400 dark:hover:text-indigo-300;
+  }
+  .btn-icon {
+    @apply p-1.5 text-sm leading-none;
+  }
+}
+
+/* ---------- Toast 过渡 ---------- */
+.toast-enter-active,
+.toast-leave-active {
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+.toast-enter-from,
+.toast-leave-to {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+/* ---------- 抽屉 / 弹层过渡 ---------- */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.18s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+.slide-enter-active,
+.slide-leave-active {
+  transition: transform 0.22s ease;
+}
+.slide-enter-from,
+.slide-leave-to {
+  transform: translateX(-100%);
+}
+.pop-enter-active,
+.pop-leave-active {
+  transition:
+    opacity 0.16s ease,
+    transform 0.16s ease;
+}
+.pop-enter-from,
+.pop-leave-to {
+  opacity: 0;
+  transform: scale(0.96);
+}

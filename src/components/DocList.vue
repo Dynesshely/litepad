@@ -1,5 +1,17 @@
 <script setup lang="ts">
-import { closeSidebar, createNewDoc, deleteDoc, docs, pinSidebar, st, switchToDoc, unpinSidebar } from '../store'
+import { reactive } from 'vue'
+import {
+  closeSidebar,
+  createNewDoc,
+  deleteDoc,
+  docs,
+  pinSidebar,
+  reorderDocs,
+  sortDocsByRecent,
+  st,
+  switchToDoc,
+  unpinSidebar,
+} from '../store'
 import { fmtRel } from '../lib/format'
 import { encodingLabel } from '../lib/encoding'
 import { t } from '../lib/i18n'
@@ -10,6 +22,70 @@ function onNew(): void {
   createNewDoc()
   if (props.mode === 'overlay') closeSidebar()
 }
+
+/* ---------------- 拖动排序 ---------------- */
+const DRAG_THRESHOLD = 4 // 位移超过 4px 才算拖动，否则视为点击切换
+
+const drag = reactive({ id: '', from: -1, over: -1, active: false })
+let startY = 0
+let rowMids: number[] = []
+let suppressClick = false
+
+function collectRowMids(listEl: HTMLElement): void {
+  rowMids = Array.from(listEl.querySelectorAll<HTMLElement>('li[data-doc-id]')).map((el) => {
+    const rect = el.getBoundingClientRect()
+    return (rect.top + rect.bottom) / 2
+  })
+}
+
+function onRowPointerDown(e: PointerEvent, id: string, index: number): void {
+  if (e.button !== 0) return
+  if ((e.target as HTMLElement).closest('button')) return // 删除等按钮不触发拖动
+  const row = e.currentTarget as HTMLElement
+  const listEl = row.parentElement
+  if (!listEl) return
+  drag.id = id
+  drag.from = index
+  drag.over = index
+  drag.active = false
+  startY = e.clientY
+  rowMids = []
+  collectRowMids(listEl)
+  window.addEventListener('pointermove', onPointerMove)
+  window.addEventListener('pointerup', onPointerUp, { once: true })
+  window.addEventListener('pointercancel', onPointerUp, { once: true })
+}
+
+function onPointerMove(e: PointerEvent): void {
+  if (!drag.id) return
+  if (!drag.active) {
+    if (Math.abs(e.clientY - startY) < DRAG_THRESHOLD) return
+    drag.active = true
+  }
+  let target = rowMids.findIndex((mid) => e.clientY < mid)
+  if (target === -1) target = rowMids.length - 1
+  drag.over = target
+}
+
+function onPointerUp(): void {
+  window.removeEventListener('pointermove', onPointerMove)
+  if (drag.active && drag.id && drag.over !== drag.from) {
+    reorderDocs(drag.id, drag.over)
+  }
+  if (drag.active) suppressClick = true // 拖动结束时抑制紧随其后的 click
+  drag.id = ''
+  drag.from = -1
+  drag.over = -1
+  drag.active = false
+}
+
+function onRowClick(id: string): void {
+  if (suppressClick) {
+    suppressClick = false
+    return
+  }
+  switchToDoc(id)
+}
 </script>
 
 <template>
@@ -19,7 +95,17 @@ function onNew(): void {
     >
       <span class="text-sm font-semibold text-zinc-800 dark:text-zinc-100">{{ t('list.title') }}</span>
       <span class="flex items-center gap-1">
-        <button class="btn" :title="t('tb.newTitle')" @click="onNew()">{{ t('list.new') }}</button>
+        <button data-testid="new-doc" class="btn" :title="t('tb.newTitle')" @click="onNew()">
+          {{ t('list.new') }}
+        </button>
+        <button
+          data-testid="sort-recent"
+          class="btn"
+          :title="t('list.sortRecentTitle')"
+          @click="sortDocsByRecent()"
+        >
+          {{ t('list.sortRecent') }}
+        </button>
         <button
           v-if="mode === 'overlay'"
           data-testid="pin-btn"
@@ -55,18 +141,35 @@ function onNew(): void {
       </li>
 
       <li
-        v-for="d in docs"
+        v-for="(d, index) in docs"
         :key="d.id"
-        class="group mb-0.5 flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800"
-        :class="d.id === st.currentId ? 'bg-zinc-100 dark:bg-zinc-800' : ''"
-        @click="switchToDoc(d.id)"
+        :data-doc-id="d.id"
+        :data-index="index"
+        data-testid="doc-row"
+        class="group mb-0.5 flex cursor-pointer touch-pan-y items-center gap-2 rounded-lg px-2 py-1.5 transition-colors select-none hover:bg-zinc-100 dark:hover:bg-zinc-800"
+        :class="[
+          d.id === st.currentId ? 'bg-zinc-100 dark:bg-zinc-800' : '',
+          drag.active && drag.id === d.id ? 'opacity-40' : '',
+          drag.active && drag.over === index && drag.id !== d.id
+            ? 'ring-2 ring-indigo-400 dark:ring-indigo-500'
+            : '',
+        ]"
+        @pointerdown="onRowPointerDown($event, d.id, index)"
+        @click="onRowClick(d.id)"
       >
         <span
           class="h-5 w-0.5 shrink-0 rounded-full transition-colors"
           :class="d.id === st.currentId ? 'bg-indigo-500' : 'bg-transparent'"
         ></span>
+        <span
+          class="shrink-0 cursor-grab text-[11px] text-zinc-300 opacity-0 transition-opacity group-hover:opacity-100 dark:text-zinc-600"
+          :title="t('list.dragTitle')"
+        >
+          ⠿
+        </span>
         <span class="min-w-0 flex-1">
           <span
+            data-testid="doc-title"
             class="block truncate text-xs font-medium text-zinc-700 dark:text-zinc-200"
             :class="d.id === st.currentId ? 'text-indigo-600 dark:text-indigo-300' : ''"
           >

@@ -4,6 +4,7 @@
  *       配额降级、导入导出、主题、抽屉/弹层开关。
  */
 import { computed, reactive } from 'vue'
+import { detectLocale, isLocaleId, locale, setLocale, t } from './lib/i18n'
 import {
   detectStore,
   isStoreOk,
@@ -36,6 +37,8 @@ export interface DocMeta {
   updatedAt: number
   /** 该草稿用于导出/导入 .txt 的文本编码（缺省视为 UTF-8） */
   encoding?: string
+  /** 列表中的手动排序位置（越小越靠前；缺失时按 updatedAt 兜底） */
+  order?: number
 }
 export interface Snap {
   t: number
@@ -78,8 +81,7 @@ export function setEditorText(text: string): void {
     }
   }
   updateCounts(text)
-  st.saveKind = 'ok'
-  st.saveMsg = '已恢复'
+  setSave('ok', 'st.recovered')
 }
 
 export function isSuppressingEvents(): boolean {
@@ -105,7 +107,9 @@ export const st = reactive({
   index: {} as Record<string, DocMeta>,
   currentId: null as string | null,
   saveKind: '' as '' | 'ok' | 'dirty' | 'err',
-  saveMsg: '就绪',
+  /** 状态栏保存文案的 i18n key + 可选时间戳：在 UI 层翻译，切换语言即刻生效 */
+  saveKey: 'st.ready',
+  saveAt: null as number | null,
   chars: 0,
   lines: 0,
   degraded: false,
@@ -121,7 +125,11 @@ export const st = reactive({
 })
 
 export const docs = computed<DocMeta[]>(() =>
-  Object.values(st.index).sort((a, b) => b.updatedAt - a.updatedAt),
+  Object.values(st.index).sort(
+    (a, b) =>
+      (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER) ||
+      b.updatedAt - a.updatedAt,
+  ),
 )
 export const currentMeta = computed<DocMeta | null>(
   () => (st.currentId && st.index[st.currentId]) || null,
@@ -146,6 +154,33 @@ function commitIndex(): void {
 }
 function makeId(): string {
   return 'd' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8)
+}
+/** 新草稿默认排在列表最前：order 取当前最小值 - 1 */
+function nextTopOrder(): number {
+  const orders = Object.values(st.index).map((m) => m.order ?? 0)
+  return orders.length ? Math.min(...orders) - 1 : 0
+}
+function newMeta(id: string, title?: string): DocMeta {
+  const now = Date.now()
+  return {
+    id,
+    title: title ?? t('doc.untitled'),
+    createdAt: now,
+    updatedAt: now,
+    order: nextTopOrder(),
+  }
+}
+/** 老数据没有 order 字段时，按「最近更新优先」补一份初始顺序 */
+function normalizeOrder(): void {
+  const metas = Object.values(st.index)
+  if (!metas.length || metas.every((m) => typeof m.order === 'number')) return
+  metas
+    .slice()
+    .sort((a, b) => b.updatedAt - a.updatedAt)
+    .forEach((m, i) => {
+      m.order = i
+    })
+  commitIndex()
 }
 function hashId(): string {
   const h = location.hash
@@ -190,7 +225,13 @@ function updateCounts(text: string): void {
 }
 function updateTitle(): void {
   const meta = st.currentId ? st.index[st.currentId] : null
-  document.title = meta ? `${meta.title} — 临时草稿本` : '临时草稿本 · 自动保存'
+  document.title = meta ? t('app.docTitle', { title: meta.title }) : t('app.titleAuto')
+}
+
+function setSave(kind: '' | 'ok' | 'dirty' | 'err', key: string, at: number | null = null): void {
+  st.saveKind = kind
+  st.saveKey = key
+  st.saveAt = at
 }
 
 /* ---------------- Toast / Banner ---------------- */
@@ -241,7 +282,7 @@ export function refreshQuota(force = false): void {
       used >= 1048576
         ? `${(used / 1048576).toFixed(2)} MB`
         : `${Math.round(used / 1024)} KB`
-    st.quota = `本页源占用 ${txt}`
+    st.quota = used > 4e6 ? t('st.quotaFull', { size: txt }) : t('st.quota', { size: txt })
     st.quotaWarn = used > 4e6
   } catch {
     st.quota = ''
@@ -258,8 +299,7 @@ export function persistNow(force = false): void {
   const changed = force || text !== lastSavedText
   if (!changed) {
     if (st.saveKind === 'dirty') {
-      st.saveKind = 'ok'
-      st.saveMsg = `已自动保存 ${timeHM()}`
+      setSave('ok', 'st.saved', Date.now())
     }
     return
   }
@@ -271,12 +311,7 @@ export function persistNow(force = false): void {
 
   if (res === 'sess' || res === 'mem') {
     st.degraded = true
-    showBanner(
-      '⚠ localStorage 不可用或已写满，内容目前只暂存在浏览器会话中（关闭窗口会丢失）。' +
-        '请「备份全部」导出，或到草稿列表删除旧草稿释放空间。',
-      'error',
-      true,
-    )
+    showBanner(t('banner.degraded'), 'error', true)
   } else if (st.degraded) {
     st.degraded = false
     if (st.banner?.kind === 'error') dismissBanner()
@@ -288,15 +323,12 @@ export function persistNow(force = false): void {
     lastSnapAt = Date.now()
   }
 
-  const meta =
-    st.index[id] ||
-    (st.index[id] = { id, title: '未命名', createdAt: Date.now(), updatedAt: Date.now() })
+  const meta = st.index[id] || (st.index[id] = newMeta(id))
   meta.updatedAt = Date.now()
   meta.title = titleOf(text)
   commitIndex()
 
-  st.saveKind = 'ok'
-  st.saveMsg = `已自动保存 ${timeHM()}`
+  setSave('ok', 'st.saved', Date.now())
   updateCounts(text)
   updateTitle()
   refreshQuota(true)
@@ -304,8 +336,7 @@ export function persistNow(force = false): void {
 
 /** 编辑器监听到用户输入时回调 */
 export function onUserInput(text: string): void {
-  st.saveKind = 'dirty'
-  st.saveMsg = '自动保存中…'
+  setSave('dirty', 'st.saving')
   updateCounts(text)
   clearTimeout(saveTimer)
   saveTimer = setTimeout(() => persistNow(), SAVE_DEBOUNCE)
@@ -317,8 +348,7 @@ export function onEditorReady(): void {
   lastSavedText = text
   lastSnapAt = Date.now()
   addSnapshot(st.currentId!, text)
-  st.saveKind = 'ok'
-  st.saveMsg = text ? '已从本地恢复' : '空白草稿'
+  setSave('ok', text ? 'st.restored' : 'st.emptyDraft')
   updateCounts(text)
   updateTitle()
   refreshQuota(true)
@@ -328,18 +358,46 @@ export function onEditorReady(): void {
 export function createNewDoc(): void {
   persistNow()
   const id = makeId()
-  st.index[id] = { id, title: '未命名', createdAt: Date.now(), updatedAt: Date.now() }
+  st.index[id] = newMeta(id)
   st.currentId = id
   history.replaceState(null, '', '#' + encodeURIComponent(id))
   commitIndex()
-  showToast('已新建一篇空白草稿')
+  showToast(t('toast.newDraft'))
+}
+
+/** 拖动排序：把 draggedId 放到列表的第 targetIndex 个位置（0 基） */
+export function reorderDocs(draggedId: string, targetIndex: number): void {
+  const ids = docs.value.map((d) => d.id)
+  const from = ids.indexOf(draggedId)
+  if (from < 0) return
+  ids.splice(from, 1)
+  const to = Math.max(0, Math.min(targetIndex, ids.length))
+  ids.splice(to, 0, draggedId)
+  ids.forEach((id, i) => {
+    const meta = st.index[id]
+    if (meta) meta.order = i
+  })
+  commitIndex()
+  showToast(t('list.moved'))
+}
+
+/** 放弃手动顺序，恢复为「最近更新优先」 */
+export function sortDocsByRecent(): void {
+  Object.values(st.index)
+    .slice()
+    .sort((a, b) => b.updatedAt - a.updatedAt)
+    .forEach((meta, i) => {
+      meta.order = i
+    })
+  commitIndex()
+  showToast(t('list.reordered'))
 }
 
 export function switchToDoc(id: string, opts?: { keepHash?: boolean }): void {
   if (id === st.currentId) return
   persistNow()
   if (!st.index[id]) {
-    st.index[id] = { id, title: '未命名', createdAt: Date.now(), updatedAt: Date.now() }
+    st.index[id] = newMeta(id)
     commitIndex()
   }
   st.currentId = id
@@ -349,8 +407,8 @@ export function switchToDoc(id: string, opts?: { keepHash?: boolean }): void {
 
 export function deleteDoc(id: string): void {
   const meta = st.index[id]
-  const title = meta?.title ?? '未命名'
-  if (!window.confirm(`删除草稿「${title}」？\n正文、历史快照将一并删除，无法恢复（除非导出过备份）。`)) {
+  const title = meta?.title ?? t('doc.untitled')
+  if (!window.confirm(t('confirm.delete', { title }))) {
     return
   }
   rawDel(docKey(id))
@@ -360,14 +418,14 @@ export function deleteDoc(id: string): void {
   if (id === st.currentId) {
     // 删除当前草稿 → 新开一篇空白稿，避免把旧内容写回已删除的键
     const fresh = makeId()
-    st.index[fresh] = { id: fresh, title: '未命名', createdAt: Date.now(), updatedAt: Date.now() }
+    st.index[fresh] = newMeta(fresh)
     st.currentId = fresh
     history.replaceState(null, '', '#' + encodeURIComponent(fresh))
     commitIndex()
-    showToast(`已删除「${title}」，并新开一篇空白草稿`)
+    showToast(t('toast.deletedAndNew', { title }))
   } else {
     commitIndex()
-    showToast(`已删除「${title}」`)
+    showToast(t('toast.deleted', { title }))
   }
   refreshQuota(true)
 }
@@ -379,7 +437,7 @@ export function undoOneStep(): void {
   const cur = rawGet(docKey(id))
   const bak = rawGet(bakKey(id))
   if (bak === null) {
-    showToast('暂无更早的版本可回退')
+    showToast(t('toast.noOlder'))
     return
   }
   if (cur !== null) rawSet(bakKey(id), cur) // 当前版进入“重做位”
@@ -387,9 +445,9 @@ export function undoOneStep(): void {
   setEditorText(bak)
   st.index[id].updatedAt = Date.now()
   commitIndex()
-  st.saveMsg = '已回退，可再点一次换回'
+  setSave('ok', 'st.undone')
   refreshQuota(true)
-  showToast('已回退到上一次自动保存的版本（可再点一次换回）')
+  showToast(t('toast.rolledBack'))
 }
 
 export function restoreSnapshot(ts: number): void {
@@ -401,7 +459,7 @@ export function restoreSnapshot(ts: number): void {
   setEditorText(s.c)
   persistNow(true) // 恢复版本强制写回主键，当前版本自动转入“回退一步”的重做位
   st.historyOpen = false
-  showToast(`已恢复到 ${fmtFull(ts).slice(11)} 的版本`)
+  showToast(t('toast.snapshotRestored', { time: fmtFull(ts).slice(11) }))
 }
 
 /* ---------------- 文本编码（每篇草稿独立） ---------------- */
@@ -426,9 +484,9 @@ export function setCurrentEncoding(enc: string): void {
   applyEncodingMeta(id, def.id)
   const bad = countUnmappable(text, def.id)
   if (bad > 0) {
-    showToast(`编码已设为 ${def.label}：当前内容有 ${bad} 个字符无法表示，导出时会写成 ?`)
+    showToast(t('enc.setWarn', { enc: def.label, n: bad }))
   } else {
-    showToast(`当前草稿编码已设为 ${def.label}`)
+    showToast(t('enc.set', { enc: def.label }))
   }
 }
 
@@ -443,16 +501,23 @@ export function importTextFile(file: File): void {
       const bytes = new Uint8Array(reader.result as ArrayBuffer)
       const res = decodeBytes(bytes, def.id)
       const label = encodingLabel(res.encoding)
-      if (!window.confirm(`按 ${label} 解读「${file.name}」（${bytes.length} 字节）并替换当前草稿内容？\n当前内容可用「↩ 回退一步」找回。`)) {
+      if (!window.confirm(t('enc.importConfirm', { enc: label, file: file.name, size: bytes.length }))) {
         return
       }
       setEditorText(res.text)
       persistNow(true)
       if (res.encoding !== def.id) applyEncodingMeta(id, res.encoding) // 跟随 BOM 校正草稿编码
       refreshQuota(true)
-      showToast(`已按 ${label} 导入 ${file.name}${res.detectedBom ? '（检测到 BOM）' : ''}，共 ${res.text.length} 字符`)
+      showToast(
+        t('enc.imported', {
+          enc: label,
+          file: file.name,
+          bom: res.detectedBom ? t('enc.importedBom') : '',
+          chars: res.text.length,
+        }),
+      )
     } catch {
-      showToast('导入失败：无法读取该文件')
+      showToast(t('enc.importFailed'))
     }
   }
   reader.readAsArrayBuffer(file)
@@ -464,7 +529,7 @@ export function exportCurrentTxt(): void {
   const id = st.currentId
   const text = liveText()
   if (!text) {
-    showToast('当前草稿为空，没有可导出的内容')
+    showToast(t('enc.exportEmpty'))
     return
   }
   const def = getEncodingDef(encodingOf(id))
@@ -472,15 +537,15 @@ export function exportCurrentTxt(): void {
   const meta = id ? st.index[id] : null
   const name = `草稿-${safeName(meta?.title ?? 'untitled')}-${fmtStamp(Date.now())}.txt`
   downloadBytes(name, bytes, `text/plain;charset=${mimeCharset(def.id)}`)
-  const warn = unmappable ? `；${unmappable} 个字符无法用 ${def.label} 表示，已写成 ?` : ''
-  showToast(`已按 ${def.label} 导出 ${name}（${bytes.length} 字节）${warn}`)
+  const warn = unmappable ? t('enc.exportedWarn', { n: unmappable, enc: def.label }) : ''
+  showToast(t('enc.exported', { enc: def.label, name, size: bytes.length }) + warn)
 }
 
 export function backupAll(): void {
   persistNow()
   const ids = Object.keys(st.index)
   if (!ids.length) {
-    showToast('还没有任何草稿')
+    showToast(t('toast.noDrafts'))
     return
   }
   const docs = ids.map((id) => ({
@@ -489,12 +554,13 @@ export function backupAll(): void {
     createdAt: st.index[id].createdAt,
     updatedAt: st.index[id].updatedAt,
     encoding: st.index[id].encoding || DEFAULT_ENCODING,
+    order: st.index[id].order ?? 0,
     content: rawGet(docKey(id)) ?? '',
   }))
   const payload = { app: 'dsh-scratch', version: 1, exportedAt: Date.now(), docs }
   const name = `草稿本备份-${fmtStamp(Date.now())}.json`
   downloadBlob(name, new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' }))
-  showToast(`已备份 ${docs.length} 篇草稿`)
+  showToast(t('toast.backedUp', { n: docs.length }))
 }
 
 export function importBackupFile(file: File): void {
@@ -518,6 +584,7 @@ export function importBackupFile(file: File): void {
           createdAt?: number
           updatedAt?: number
           encoding?: unknown
+          order?: number
           content?: unknown
         }
         const local = st.index[raw.id]
@@ -526,10 +593,11 @@ export function importBackupFile(file: File): void {
         if (!local) {
           st.index[raw.id] = {
             id: raw.id,
-            title: raw.title || '未命名',
+            title: raw.title || t('doc.untitled'),
             createdAt: raw.createdAt || Date.now(),
             updatedAt: raw.updatedAt || Date.now(),
             encoding: enc,
+            order: raw.order ?? nextTopOrder(),
           }
           rawSet(docKey(raw.id), content)
           added++
@@ -550,29 +618,32 @@ export function importBackupFile(file: File): void {
       commitIndex()
       refreshQuota(true)
       if (currentChanged) setEditorText(currentContent)
-      showToast(`导入完成：新增 ${added} 篇，更新 ${updated} 篇，跳过 ${skipped} 篇`)
+      showToast(t('toast.importSummary', { added, updated, skipped }))
     } catch {
-      showToast('导入失败：文件格式不正确')
+      showToast(t('toast.importBadFormat'))
     }
   }
   reader.readAsText(file)
 }
 
-/* ---------------- 主题与界面偏好 ---------------- */
+/* ---------------- 主题、语言与界面偏好 ---------------- */
 interface UiPref {
   dark: boolean
   sidebarPinned: boolean
+  locale: string
 }
 
 function loadUiPref(): UiPref {
   let dark: boolean | null = null
   let sidebarPinned = false
+  let loc = ''
   try {
     const raw = rawGet(UI_KEY)
     if (raw) {
-      const p = JSON.parse(raw) as { dark?: unknown; sidebarPinned?: unknown }
+      const p = JSON.parse(raw) as { dark?: unknown; sidebarPinned?: unknown; locale?: unknown }
       if (typeof p.dark === 'boolean') dark = p.dark
       if (typeof p.sidebarPinned === 'boolean') sidebarPinned = p.sidebarPinned
+      if (isLocaleId(p.locale)) loc = p.locale
     }
   } catch {
     /* 忽略 */
@@ -580,11 +651,14 @@ function loadUiPref(): UiPref {
   if (dark === null) {
     dark = !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)
   }
-  return { dark, sidebarPinned }
+  return { dark, sidebarPinned, locale: loc || detectLocale() }
 }
 
 function saveUiPref(): void {
-  rawSet(UI_KEY, JSON.stringify({ dark: st.dark, sidebarPinned: st.sidebarPinned }))
+  rawSet(
+    UI_KEY,
+    JSON.stringify({ dark: st.dark, sidebarPinned: st.sidebarPinned, locale: locale.value }),
+  )
 }
 
 function applyThemeClass(): void {
@@ -597,13 +671,21 @@ export function toggleDark(): void {
   saveUiPref()
 }
 
+/** 切换界面语言（工具栏主题按钮左侧入口） */
+export function changeLocale(id: string): void {
+  setLocale(id)
+  saveUiPref()
+  updateTitle()
+  refreshQuota(true)
+}
+
 /* ---------------- 面板开关 ---------------- */
 /** 固定为左侧全高常驻面板 */
 export function pinSidebar(): void {
   st.sidebarPinned = true
   st.sidebarOpen = false
   saveUiPref()
-  showToast('草稿列表已固定到左侧（再点工具栏按钮可取消固定）')
+  showToast(t('toast.pinned'))
 }
 export function unpinSidebar(): void {
   st.sidebarPinned = false
@@ -621,7 +703,7 @@ export function closeSidebar(): void {
 }
 export function openHistory(): void {
   if (st.currentId) st.historyOpen = true
-  else showToast('还没有草稿')
+  else showToast(t('toast.historyNoDraft'))
 }
 export function closeHistory(): void {
   st.historyOpen = false
@@ -641,7 +723,7 @@ function onKeyDown(e: KeyboardEvent): void {
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
     e.preventDefault()
     persistNow()
-    showToast(`无需手动保存：已自动保存于 ${timeHM()}`)
+    showToast(t('toast.noManualSaveAt', { time: timeHM() }))
   }
 }
 
@@ -653,24 +735,14 @@ export function init(): void {
   const pref = loadUiPref()
   st.dark = pref.dark
   st.sidebarPinned = pref.sidebarPinned
+  setLocale(pref.locale)
+  normalizeOrder()
   applyThemeClass()
 
   if (!isStoreOk()) {
-    showBanner(
-      '⚠ 此浏览器当前不允许持久化存储（localStorage 不可用，常见于部分隐私模式或受限环境）。' +
-        '内容仍会自动保存，但只在本页会话内有效，关闭页面即丢失。请尽快「备份全部」到本地文件。',
-      'error',
-      true,
-    )
+    showBanner(t('banner.noStorage'), 'error', true)
   } else if (location.protocol === 'file:' && !rawGet(HINT_KEY)) {
-    showBanner(
-      '已开启自动保存。首次使用请自测：输入几行文字 → 按 F5 刷新 → 内容应原样保留。' +
-        '若刷新后变空，说明该浏览器在 file:// 打开方式下不持久化 localStorage，' +
-        '请改用本地 http 服务打开（如 npm run dev / npm run preview）。',
-      'info',
-      true,
-      HINT_KEY,
-    )
+    showBanner(t('banner.fileHint'), 'info', true, HINT_KEY)
   }
 
   const h = hashId()

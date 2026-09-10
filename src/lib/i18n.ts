@@ -65,8 +65,11 @@ const messages: Record<LocaleId, Record<string, string>> = {
 
     'list.title': '我的草稿',
     'list.new': '＋ 新建',
+    'list.newAria': '新建草稿',
     'list.pin': '📌 固定',
     'list.pinned': '📌 已固定',
+    'list.pinAria': '固定草稿列表到左侧',
+    'list.unpinAria': '取消固定草稿列表',
     'list.pinTitle': '固定到左侧，作为全高常驻面板',
     'list.unpinTitle': '取消固定，回到浮层抽屉',
     'list.closeTitle': '关闭列表',
@@ -181,8 +184,11 @@ const messages: Record<LocaleId, Record<string, string>> = {
 
     'list.title': 'My drafts',
     'list.new': '＋ New',
+    'list.newAria': 'New draft',
     'list.pin': '📌 Pin',
     'list.pinned': '📌 Pinned',
+    'list.pinAria': 'Pin the draft list to the left',
+    'list.unpinAria': 'Unpin the draft list',
     'list.pinTitle': 'Pin to the left as a full-height panel',
     'list.unpinTitle': 'Unpin and go back to the drawer',
     'list.closeTitle': 'Close list',

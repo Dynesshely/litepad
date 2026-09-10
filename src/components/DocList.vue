@@ -95,8 +95,14 @@ function onRowClick(id: string): void {
     >
       <span class="text-sm font-semibold text-zinc-800 dark:text-zinc-100">{{ t('list.title') }}</span>
       <span class="flex items-center gap-1">
-        <button data-testid="new-doc" class="btn" :title="t('tb.newTitle')" @click="onNew()">
-          {{ t('list.new') }}
+        <button
+          data-testid="new-doc"
+          class="btn btn-icon"
+          :title="t('tb.newTitle')"
+          :aria-label="t('list.newAria')"
+          @click="onNew()"
+        >
+          ＋
         </button>
         <button
           data-testid="sort-recent"
@@ -109,20 +115,22 @@ function onRowClick(id: string): void {
         <button
           v-if="mode === 'overlay'"
           data-testid="pin-btn"
-          class="btn"
+          class="btn btn-icon"
           :title="t('list.pinTitle')"
+          :aria-label="t('list.pinAria')"
           @click="pinSidebar()"
         >
-          {{ t('list.pin') }}
+          📌
         </button>
         <button
           v-else
           data-testid="unpin-btn"
-          class="btn border-indigo-400 text-indigo-600 dark:border-indigo-400 dark:text-indigo-300"
+          class="btn btn-icon border-indigo-400 bg-indigo-50 text-indigo-600 dark:border-indigo-400 dark:bg-indigo-950/40 dark:text-indigo-300"
           :title="t('list.unpinTitle')"
+          :aria-label="t('list.unpinAria')"
           @click="unpinSidebar()"
         >
-          {{ t('list.pinned') }}
+          📌
         </button>
         <button
           v-if="mode === 'overlay'"

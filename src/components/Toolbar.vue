@@ -31,7 +31,15 @@ function onFile(e: Event): void {
     </div>
 
     <button class="btn" title="新开一篇独立草稿（也可以直接新开浏览器标签）" @click="createNewDoc()">＋ 新建</button>
-    <button class="btn" title="查看 / 管理所有草稿" @click="toggleSidebar()">📄 草稿列表</button>
+    <button
+      data-testid="list-toggle"
+      class="btn"
+      :class="st.sidebarPinned ? 'border-indigo-400 bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-300' : ''"
+      :title="st.sidebarPinned ? '取消固定：草稿列表回到浮层抽屉' : '查看 / 管理所有草稿（可在面板里固定到左侧常驻）'"
+      @click="toggleSidebar()"
+    >
+      📄 草稿列表{{ st.sidebarPinned ? ' · 已固定' : '' }}
+    </button>
     <button class="btn" :disabled="!st.currentId" title="当前草稿的历史快照，可恢复到几分钟前" @click="openHistory()">
       🕘 历史快照
     </button>

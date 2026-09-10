@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { dismissBanner, st } from '../store'
+import { t } from '../lib/i18n'
 
 const cls = computed(() => {
   switch (st.banner?.kind) {
@@ -23,7 +24,7 @@ const cls = computed(() => {
     <span class="flex-1 whitespace-pre-wrap break-words">{{ st.banner.msg }}</span>
     <button
       class="cursor-pointer rounded px-1 text-sm font-bold leading-none opacity-70 transition-opacity hover:opacity-100"
-      title="关闭提示"
+      :title="t('banner.dismiss')"
       @click="dismissBanner()"
     >
       ✕

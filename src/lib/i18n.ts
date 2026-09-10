@@ -126,9 +126,9 @@ const messages: Record<LocaleId, Record<string, string>> = {
     'toast.pinned': '草稿列表已固定到左侧（再点工具栏按钮可取消固定）',
     'toast.historyNoDraft': '还没有草稿',
 
+    'banner.dismiss': '关闭提示',
     'banner.noStorage':
-      '⚠ 此浏览器当前不允许持久化存储（localStorage 不可用，常见于部分隐私模式或受限环境）。内容仍会自动保存，但只在本页会话内有效，关闭页面即丢失。请尽快「备份全部」到本地文件。',
-    'banner.fileHint':
+      '⚠ 此浏览器当前不允许持久化存储（localStorage 不可用，常见于部分隐私模式或受限环境）。内容仍会自动保存，但只在本页会话内有效，关闭页面即丢失。请尽快「备份全部」到本地文件。',    'banner.fileHint':
       '已开启自动保存。首次使用请自测：输入几行文字 → 按 F5 刷新 → 内容应原样保留。若刷新后变空，说明该浏览器在 file:// 打开方式下不持久化 localStorage，请改用本地 http 服务打开（如 npm run dev / npm run preview）。',
     'banner.degraded':
       '⚠ localStorage 不可用或已写满，内容目前只暂存在浏览器会话中（关闭窗口会丢失）。请「备份全部」导出，或到草稿列表删除旧草稿释放空间。',
@@ -244,6 +244,7 @@ const messages: Record<LocaleId, Record<string, string>> = {
     'toast.pinned': 'Draft list pinned to the left (click the toolbar button again to unpin)',
     'toast.historyNoDraft': 'No drafts yet',
 
+    'banner.dismiss': 'Dismiss',
     'banner.noStorage':
       '⚠ This browser does not allow persistent storage (localStorage is unavailable — common in some private-mode or restricted environments). Content is still autosaved, but only for this page session: closing the page loses it. Please “💾 Back up all” to a local file soon.',
     'banner.fileHint':

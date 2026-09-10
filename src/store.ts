@@ -18,13 +18,24 @@ import {
   rawDel,
 } from './lib/storage'
 import { fmtFull, fmtRel, fmtStamp, timeHM, titleOf, safeName } from './lib/format'
-import { downloadBlob, downloadText } from './lib/download'
+import { downloadBlob, downloadBytes } from './lib/download'
+import {
+  DEFAULT_ENCODING,
+  countUnmappable,
+  decodeBytes,
+  encodeTextDetailed,
+  encodingLabel,
+  getEncodingDef,
+  mimeCharset,
+} from './lib/encoding'
 
 export interface DocMeta {
   id: string
   title: string
   createdAt: number
   updatedAt: number
+  /** 该草稿用于导出/导入 .txt 的文本编码（缺省视为 UTF-8） */
+  encoding?: string
 }
 export interface Snap {
   t: number
@@ -100,6 +111,8 @@ export const st = reactive({
   degraded: false,
   dark: false,
   sidebarOpen: false,
+  /** 草稿列表是否固定为左侧常驻面板（全高） */
+  sidebarPinned: false,
   historyOpen: false,
   toast: null as { seq: number; msg: string } | null,
   banner: null as Banner | null,
@@ -116,6 +129,8 @@ export const currentMeta = computed<DocMeta | null>(
 export const historyList = computed<Snap[]>(() =>
   st.currentId ? readHist(st.currentId) : [],
 )
+/** 当前草稿的文本编码 */
+export const currentEncoding = computed<string>(() => encodingOf(st.currentId))
 
 /* ---------------- 存储读写辅助 ---------------- */
 function loadIndex(): Record<string, DocMeta> {
@@ -389,18 +404,76 @@ export function restoreSnapshot(ts: number): void {
   showToast(`已恢复到 ${fmtFull(ts).slice(11)} 的版本`)
 }
 
+/* ---------------- 文本编码（每篇草稿独立） ---------------- */
+export function encodingOf(id: string | null | undefined): string {
+  const meta = id ? st.index[id] : null
+  return meta?.encoding || DEFAULT_ENCODING
+}
+
+function applyEncodingMeta(id: string, enc: string): void {
+  const meta = st.index[id]
+  if (!meta) return
+  meta.encoding = enc
+  commitIndex()
+}
+
+/** 切换当前草稿的编码（只影响导出/导入的字节解读，正文不变） */
+export function setCurrentEncoding(enc: string): void {
+  const id = st.currentId
+  if (!id) return
+  const def = getEncodingDef(enc)
+  const text = liveText()
+  applyEncodingMeta(id, def.id)
+  const bad = countUnmappable(text, def.id)
+  if (bad > 0) {
+    showToast(`编码已设为 ${def.label}：当前内容有 ${bad} 个字符无法表示，导出时会写成 ?`)
+  } else {
+    showToast(`当前草稿编码已设为 ${def.label}`)
+  }
+}
+
+/** 按当前草稿的编码导入 .txt（文件中带 BOM 时以 BOM 为准） */
+export function importTextFile(file: File): void {
+  const id = st.currentId
+  if (!id) return
+  const def = getEncodingDef(encodingOf(id))
+  const reader = new FileReader()
+  reader.onload = () => {
+    try {
+      const bytes = new Uint8Array(reader.result as ArrayBuffer)
+      const res = decodeBytes(bytes, def.id)
+      const label = encodingLabel(res.encoding)
+      if (!window.confirm(`按 ${label} 解读「${file.name}」（${bytes.length} 字节）并替换当前草稿内容？\n当前内容可用「↩ 回退一步」找回。`)) {
+        return
+      }
+      setEditorText(res.text)
+      persistNow(true)
+      if (res.encoding !== def.id) applyEncodingMeta(id, res.encoding) // 跟随 BOM 校正草稿编码
+      refreshQuota(true)
+      showToast(`已按 ${label} 导入 ${file.name}${res.detectedBom ? '（检测到 BOM）' : ''}，共 ${res.text.length} 字符`)
+    } catch {
+      showToast('导入失败：无法读取该文件')
+    }
+  }
+  reader.readAsArrayBuffer(file)
+}
+
 /* ---------------- 导入导出 ---------------- */
 export function exportCurrentTxt(): void {
   persistNow()
+  const id = st.currentId
   const text = liveText()
   if (!text) {
     showToast('当前草稿为空，没有可导出的内容')
     return
   }
-  const meta = st.currentId ? st.index[st.currentId] : null
+  const def = getEncodingDef(encodingOf(id))
+  const { bytes, unmappable } = encodeTextDetailed(text, def.id)
+  const meta = id ? st.index[id] : null
   const name = `草稿-${safeName(meta?.title ?? 'untitled')}-${fmtStamp(Date.now())}.txt`
-  downloadText(name, text)
-  showToast(`已导出 ${name}`)
+  downloadBytes(name, bytes, `text/plain;charset=${mimeCharset(def.id)}`)
+  const warn = unmappable ? `；${unmappable} 个字符无法用 ${def.label} 表示，已写成 ?` : ''
+  showToast(`已按 ${def.label} 导出 ${name}（${bytes.length} 字节）${warn}`)
 }
 
 export function backupAll(): void {
@@ -415,6 +488,7 @@ export function backupAll(): void {
     title: st.index[id].title,
     createdAt: st.index[id].createdAt,
     updatedAt: st.index[id].updatedAt,
+    encoding: st.index[id].encoding || DEFAULT_ENCODING,
     content: rawGet(docKey(id)) ?? '',
   }))
   const payload = { app: 'dsh-scratch', version: 1, exportedAt: Date.now(), docs }
@@ -438,21 +512,31 @@ export function importBackupFile(file: File): void {
       let currentContent = ''
       for (const d of data.docs as { id?: unknown }[]) {
         if (!d || typeof d.id !== 'string') continue
-        const raw = d as { id: string; title?: string; createdAt?: number; updatedAt?: number; content?: unknown }
+        const raw = d as {
+          id: string
+          title?: string
+          createdAt?: number
+          updatedAt?: number
+          encoding?: unknown
+          content?: unknown
+        }
         const local = st.index[raw.id]
         const content = typeof raw.content === 'string' ? raw.content : ''
+        const enc = typeof raw.encoding === 'string' ? raw.encoding : DEFAULT_ENCODING
         if (!local) {
           st.index[raw.id] = {
             id: raw.id,
             title: raw.title || '未命名',
             createdAt: raw.createdAt || Date.now(),
             updatedAt: raw.updatedAt || Date.now(),
+            encoding: enc,
           }
           rawSet(docKey(raw.id), content)
           added++
         } else if ((raw.updatedAt || 0) > (local.updatedAt || 0)) {
           local.title = raw.title || local.title
           local.updatedAt = raw.updatedAt || local.updatedAt
+          local.encoding = enc
           rawSet(docKey(raw.id), content)
           updated++
           if (raw.id === st.currentId) {
@@ -474,31 +558,62 @@ export function importBackupFile(file: File): void {
   reader.readAsText(file)
 }
 
-/* ---------------- 主题 ---------------- */
-function loadUiPref(): { dark: boolean } {
+/* ---------------- 主题与界面偏好 ---------------- */
+interface UiPref {
+  dark: boolean
+  sidebarPinned: boolean
+}
+
+function loadUiPref(): UiPref {
+  let dark: boolean | null = null
+  let sidebarPinned = false
   try {
     const raw = rawGet(UI_KEY)
     if (raw) {
-      const p = JSON.parse(raw) as { dark?: unknown }
-      if (typeof p.dark === 'boolean') return { dark: p.dark }
+      const p = JSON.parse(raw) as { dark?: unknown; sidebarPinned?: unknown }
+      if (typeof p.dark === 'boolean') dark = p.dark
+      if (typeof p.sidebarPinned === 'boolean') sidebarPinned = p.sidebarPinned
     }
   } catch {
     /* 忽略 */
   }
-  const sys = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-  return { dark: !!sys }
+  if (dark === null) {
+    dark = !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)
+  }
+  return { dark, sidebarPinned }
 }
+
+function saveUiPref(): void {
+  rawSet(UI_KEY, JSON.stringify({ dark: st.dark, sidebarPinned: st.sidebarPinned }))
+}
+
 function applyThemeClass(): void {
   document.documentElement.classList.toggle('dark', st.dark)
 }
+
 export function toggleDark(): void {
   st.dark = !st.dark
-  rawSet(UI_KEY, JSON.stringify({ dark: st.dark }))
   applyThemeClass()
+  saveUiPref()
 }
 
 /* ---------------- 面板开关 ---------------- */
+/** 固定为左侧全高常驻面板 */
+export function pinSidebar(): void {
+  st.sidebarPinned = true
+  st.sidebarOpen = false
+  saveUiPref()
+  showToast('草稿列表已固定到左侧（再点工具栏按钮可取消固定）')
+}
+export function unpinSidebar(): void {
+  st.sidebarPinned = false
+  saveUiPref()
+}
 export function toggleSidebar(): void {
+  if (st.sidebarPinned) {
+    unpinSidebar()
+    return
+  }
   st.sidebarOpen = !st.sidebarOpen
 }
 export function closeSidebar(): void {
@@ -535,7 +650,9 @@ export function init(): void {
   if (st.ready) return
   detectStore()
   st.index = loadIndex()
-  st.dark = loadUiPref().dark
+  const pref = loadUiPref()
+  st.dark = pref.dark
+  st.sidebarPinned = pref.sidebarPinned
   applyThemeClass()
 
   if (!isStoreOk()) {

@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import {
   st,
   backupAll,
+  changeLocale,
   createNewDoc,
   exportCurrentTxt,
   importBackupFile,
@@ -11,13 +12,20 @@ import {
   toggleSidebar,
   undoOneStep,
 } from '../store'
+import { locale, localeShort, t } from '../lib/i18n'
+import LocaleMenu from './LocaleMenu.vue'
 
 const fileInput = ref<HTMLInputElement | null>(null)
+const langOpen = ref(false)
 
 function onFile(e: Event): void {
   const input = e.target as HTMLInputElement
   if (input.files && input.files[0]) importBackupFile(input.files[0])
   input.value = ''
+}
+
+function onLocale(id: string): void {
+  changeLocale(id)
 }
 </script>
 
@@ -27,38 +35,56 @@ function onFile(e: Event): void {
   >
     <div class="mr-2 flex select-none items-center gap-1.5 text-sm font-semibold text-zinc-800 dark:text-zinc-100">
       <span class="grid h-6 w-6 place-items-center rounded-md bg-indigo-500 text-xs text-white shadow-sm">✎</span>
-      临时草稿本
+      {{ t('app.title') }}
     </div>
 
-    <button class="btn" title="新开一篇独立草稿（也可以直接新开浏览器标签）" @click="createNewDoc()">＋ 新建</button>
+    <button class="btn" :title="t('tb.newTitle')" @click="createNewDoc()">{{ t('tb.new') }}</button>
     <button
       data-testid="list-toggle"
       class="btn"
       :class="st.sidebarPinned ? 'border-indigo-400 bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-300' : ''"
-      :title="st.sidebarPinned ? '取消固定：草稿列表回到浮层抽屉' : '查看 / 管理所有草稿（可在面板里固定到左侧常驻）'"
+      :title="st.sidebarPinned ? t('tb.docsPinnedTitle') : t('tb.docsTitle')"
       @click="toggleSidebar()"
     >
-      📄 草稿列表{{ st.sidebarPinned ? ' · 已固定' : '' }}
+      {{ st.sidebarPinned ? t('tb.docsPinned') : t('tb.docs') }}
     </button>
-    <button class="btn" :disabled="!st.currentId" title="当前草稿的历史快照，可恢复到几分钟前" @click="openHistory()">
-      🕘 历史快照
+    <button class="btn" :disabled="!st.currentId" :title="t('tb.historyTitle')" @click="openHistory()">
+      {{ t('tb.history') }}
     </button>
-    <button class="btn" :disabled="!st.currentId" title="把内容换回上一次自动保存的版本（再点一次可换回）" @click="undoOneStep()">
-      ↩ 回退一步
+    <button class="btn" :disabled="!st.currentId" :title="t('tb.undoTitle')" @click="undoOneStep()">
+      {{ t('tb.undo') }}
     </button>
 
     <span class="mx-1 hidden h-4 w-px bg-zinc-200 sm:block dark:bg-zinc-700"></span>
 
-    <button class="btn" :disabled="!st.currentId" title="把当前草稿另存为 .txt 文件" @click="exportCurrentTxt()">
-      ⬇ 导出 .txt
+    <button class="btn" :disabled="!st.currentId" :title="t('tb.exportTitle')" @click="exportCurrentTxt()">
+      {{ t('tb.export') }}
     </button>
-    <button class="btn" title="把全部草稿打包成 JSON 备份文件" @click="backupAll()">💾 备份全部</button>
-    <button class="btn" title="从 JSON 备份文件合并导入草稿" @click="fileInput?.click()">📂 导入备份</button>
+    <button class="btn" :title="t('tb.backupTitle')" @click="backupAll()">{{ t('tb.backup') }}</button>
+    <button class="btn" :title="t('tb.importTitle')" @click="fileInput?.click()">{{ t('tb.import') }}</button>
     <input ref="fileInput" type="file" accept=".json,application/json" class="hidden" @change="onFile" />
 
     <div class="flex-1"></div>
 
-    <button class="btn" :title="st.dark ? '切换到浅色模式' : '切换到深色模式'" @click="toggleDark()">
+    <!-- 语言切换：紧邻主题切换按钮的左侧 -->
+    <div class="relative">
+      <button
+        data-testid="locale-btn"
+        class="btn"
+        :title="t('tb.lang')"
+        @click="langOpen = !langOpen"
+      >
+        🌐 {{ localeShort() }}
+      </button>
+      <LocaleMenu v-if="langOpen" :current="locale" @select="onLocale" @close="langOpen = false" />
+    </div>
+
+    <button
+      data-testid="theme-btn"
+      class="btn"
+      :title="st.dark ? t('tb.themeToLight') : t('tb.themeToDark')"
+      @click="toggleDark()"
+    >
       {{ st.dark ? '☀️' : '🌙' }}
     </button>
   </header>

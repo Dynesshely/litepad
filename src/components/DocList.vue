@@ -2,6 +2,7 @@
 import { closeSidebar, createNewDoc, deleteDoc, docs, pinSidebar, st, switchToDoc, unpinSidebar } from '../store'
 import { fmtRel } from '../lib/format'
 import { encodingLabel } from '../lib/encoding'
+import { t } from '../lib/i18n'
 
 const props = defineProps<{ mode: 'docked' | 'overlay' }>()
 
@@ -16,28 +17,33 @@ function onNew(): void {
     <div
       class="flex items-center justify-between border-b border-zinc-200 px-3 py-2.5 dark:border-zinc-800"
     >
-      <span class="text-sm font-semibold text-zinc-800 dark:text-zinc-100">我的草稿</span>
+      <span class="text-sm font-semibold text-zinc-800 dark:text-zinc-100">{{ t('list.title') }}</span>
       <span class="flex items-center gap-1">
-        <button class="btn" title="新开一篇草稿" @click="onNew()">＋ 新建</button>
+        <button class="btn" :title="t('tb.newTitle')" @click="onNew()">{{ t('list.new') }}</button>
         <button
           v-if="mode === 'overlay'"
           data-testid="pin-btn"
           class="btn"
-          title="固定到左侧，作为全高常驻面板"
+          :title="t('list.pinTitle')"
           @click="pinSidebar()"
         >
-          📌 固定
+          {{ t('list.pin') }}
         </button>
         <button
           v-else
           data-testid="unpin-btn"
           class="btn border-indigo-400 text-indigo-600 dark:border-indigo-400 dark:text-indigo-300"
-          title="取消固定，回到浮层抽屉"
+          :title="t('list.unpinTitle')"
           @click="unpinSidebar()"
         >
-          📌 已固定
+          {{ t('list.pinned') }}
         </button>
-        <button v-if="mode === 'overlay'" class="btn btn-icon" title="关闭列表" @click="closeSidebar()">
+        <button
+          v-if="mode === 'overlay'"
+          class="btn btn-icon"
+          :title="t('list.closeTitle')"
+          @click="closeSidebar()"
+        >
           ✕
         </button>
       </span>
@@ -45,7 +51,7 @@ function onNew(): void {
 
     <ul class="flex-1 overflow-y-auto p-1.5">
       <li v-if="!docs.length" class="px-3 py-8 text-center text-xs text-zinc-400 dark:text-zinc-500">
-        还没有草稿。直接输入即可自动创建。
+        {{ t('list.empty') }}
       </li>
 
       <li
@@ -73,7 +79,7 @@ function onNew(): void {
         </span>
         <button
           class="shrink-0 rounded px-1 py-0.5 text-xs opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/60 dark:hover:text-red-400"
-          title="删除这篇草稿"
+          :title="t('list.deleteTitle')"
           @click.stop="deleteDoc(d.id)"
         >
           🗑
@@ -84,8 +90,8 @@ function onNew(): void {
     <div
       class="border-t border-zinc-200 px-3 py-1.5 text-[10px] leading-4 text-zinc-400 dark:border-zinc-800 dark:text-zinc-500"
     >
-      <template v-if="mode === 'docked'">已固定常驻；新开浏览器标签打开本应用即为另一篇独立草稿。</template>
-      <template v-else>提示：新开浏览器标签打开本应用就是另一篇独立草稿；点「📌 固定」可常驻左侧。</template>
+      <template v-if="mode === 'docked'">{{ t('list.footerDocked') }}</template>
+      <template v-else>{{ t('list.footerOverlay') }}</template>
     </div>
   </div>
 </template>

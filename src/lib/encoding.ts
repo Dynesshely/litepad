@@ -27,27 +27,29 @@ export type EncodingId =
 export interface EncodingDef {
   id: EncodingId
   label: string
-  group: string
+  /** i18n key（enc.group.*），由 UI 层翻译 */
+  groupKey: string
   kind: 'utf8' | 'utf16le' | 'utf16be' | 'legacy'
   bom: boolean
   /** 传统编码的 TextDecoder 标签（UTF 系列由本模块手工处理） */
   decoderLabel?: string
   /** 双字节前导字节范围，用于缩小反向枚举范围 */
   leadRanges?: [number, number][]
-  hint?: string
+  /** i18n key（enc.hint.*） */
+  hintKey?: string
 }
 
 export const ENCODINGS: EncodingDef[] = [
-  { id: 'utf-8', label: 'UTF-8', group: 'Unicode', kind: 'utf8', bom: false },
-  { id: 'utf-8-bom', label: 'UTF-8 BOM', group: 'Unicode', kind: 'utf8', bom: true },
-  { id: 'utf-16le', label: 'UTF-16 LE', group: 'Unicode', kind: 'utf16le', bom: false },
-  { id: 'utf-16le-bom', label: 'UTF-16 LE BOM', group: 'Unicode', kind: 'utf16le', bom: true },
-  { id: 'utf-16be', label: 'UTF-16 BE', group: 'Unicode', kind: 'utf16be', bom: false },
-  { id: 'utf-16be-bom', label: 'UTF-16 BE BOM', group: 'Unicode', kind: 'utf16be', bom: true },
+  { id: 'utf-8', label: 'UTF-8', groupKey: 'enc.group.unicode', kind: 'utf8', bom: false },
+  { id: 'utf-8-bom', label: 'UTF-8 BOM', groupKey: 'enc.group.unicode', kind: 'utf8', bom: true },
+  { id: 'utf-16le', label: 'UTF-16 LE', groupKey: 'enc.group.unicode', kind: 'utf16le', bom: false },
+  { id: 'utf-16le-bom', label: 'UTF-16 LE BOM', groupKey: 'enc.group.unicode', kind: 'utf16le', bom: true },
+  { id: 'utf-16be', label: 'UTF-16 BE', groupKey: 'enc.group.unicode', kind: 'utf16be', bom: false },
+  { id: 'utf-16be-bom', label: 'UTF-16 BE BOM', groupKey: 'enc.group.unicode', kind: 'utf16be', bom: true },
   {
     id: 'gbk',
     label: 'GBK',
-    group: '中文',
+    groupKey: 'enc.group.chinese',
     kind: 'legacy',
     bom: false,
     decoderLabel: 'gbk',
@@ -56,17 +58,17 @@ export const ENCODINGS: EncodingDef[] = [
   {
     id: 'gb18030',
     label: 'GB18030',
-    group: '中文',
+    groupKey: 'enc.group.chinese',
     kind: 'legacy',
     bom: false,
     decoderLabel: 'gb18030',
     leadRanges: [[0x81, 0xfe]],
-    hint: '四字节生僻字不支持编码',
+    hintKey: 'enc.hint.gb18030',
   },
   {
     id: 'big5',
     label: 'Big5',
-    group: '中文',
+    groupKey: 'enc.group.chinese',
     kind: 'legacy',
     bom: false,
     decoderLabel: 'big5',
@@ -75,7 +77,7 @@ export const ENCODINGS: EncodingDef[] = [
   {
     id: 'shift_jis',
     label: 'Shift_JIS',
-    group: '日文',
+    groupKey: 'enc.group.japanese',
     kind: 'legacy',
     bom: false,
     decoderLabel: 'shift_jis',
@@ -87,7 +89,7 @@ export const ENCODINGS: EncodingDef[] = [
   {
     id: 'euc-kr',
     label: 'EUC-KR',
-    group: '韩文',
+    groupKey: 'enc.group.korean',
     kind: 'legacy',
     bom: false,
     decoderLabel: 'euc-kr',
@@ -96,7 +98,7 @@ export const ENCODINGS: EncodingDef[] = [
   {
     id: 'windows-1252',
     label: 'Windows-1252',
-    group: '西欧',
+    groupKey: 'enc.group.western',
     kind: 'legacy',
     bom: false,
     decoderLabel: 'windows-1252',
@@ -105,7 +107,7 @@ export const ENCODINGS: EncodingDef[] = [
   {
     id: 'iso-8859-1',
     label: 'ISO-8859-1',
-    group: '西欧',
+    groupKey: 'enc.group.western',
     kind: 'legacy',
     bom: false,
     decoderLabel: 'iso-8859-1',
@@ -124,14 +126,14 @@ export function encodingLabel(id: string | null | undefined): string {
   return getEncodingDef(id).label
 }
 
-export function groupedEncodings(): { group: string; items: EncodingDef[] }[] {
+export function groupedEncodings(): { groupKey: string; items: EncodingDef[] }[] {
   const groups = new Map<string, EncodingDef[]>()
   for (const e of ENCODINGS) {
-    const list = groups.get(e.group) ?? []
+    const list = groups.get(e.groupKey) ?? []
     list.push(e)
-    groups.set(e.group, list)
+    groups.set(e.groupKey, list)
   }
-  return [...groups.entries()].map(([group, items]) => ({ group, items }))
+  return [...groups.entries()].map(([groupKey, items]) => ({ groupKey, items }))
 }
 
 /** 浏览器是否支持解码该编码（不支持时 UI 置灰） */

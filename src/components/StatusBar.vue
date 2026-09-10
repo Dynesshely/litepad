@@ -2,6 +2,8 @@
 import { computed, ref } from 'vue'
 import { currentEncoding, setCurrentEncoding, st } from '../store'
 import { encodingLabel } from '../lib/encoding'
+import { t } from '../lib/i18n'
+import { timeHM } from '../lib/format'
 import EncodingMenu from './EncodingMenu.vue'
 
 const menuOpen = ref(false)
@@ -33,6 +35,8 @@ const msgClass = computed(() => {
 })
 
 const encLabel = computed(() => encodingLabel(currentEncoding.value))
+/** 保存状态文案随语言实时翻译（saveKey + 可选时间戳） */
+const saveText = computed(() => t(st.saveKey, { time: st.saveAt ? timeHM(st.saveAt) : '' }))
 
 function onSelect(id: string): void {
   setCurrentEncoding(id)
@@ -45,7 +49,7 @@ function onSelect(id: string): void {
   >
     <span class="inline-flex items-center gap-1.5">
       <span class="h-1.5 w-1.5 rounded-full" :class="dotClass"></span>
-      <span :class="msgClass">{{ st.saveMsg }}</span>
+      <span :class="msgClass">{{ saveText }}</span>
     </span>
 
     <!-- 文本编码：显示当前草稿编码，点击可手动指定 -->
@@ -53,7 +57,7 @@ function onSelect(id: string): void {
       data-testid="enc-btn"
       class="cursor-pointer rounded px-1.5 py-0.5 font-mono text-[11px] transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800"
       :class="menuOpen ? 'bg-zinc-100 text-indigo-600 dark:bg-zinc-800 dark:text-indigo-300' : ''"
-      title="当前草稿的文本编码：决定 .txt 导出的字节，以及导入 .txt 时的解读方式"
+      :title="t('enc.current')"
       @click="menuOpen = !menuOpen"
     >
       {{ encLabel }}
@@ -66,7 +70,9 @@ function onSelect(id: string): void {
       {{ st.quota }}
     </span>
 
-    <span v-if="st.chars" class="ml-auto tabular-nums">{{ st.chars }} 字符 · {{ st.lines }} 行</span>
+    <span v-if="st.chars" class="ml-auto tabular-nums">
+      {{ t('st.chars', { chars: st.chars, lines: st.lines }) }}
+    </span>
 
     <EncodingMenu
       v-if="menuOpen"

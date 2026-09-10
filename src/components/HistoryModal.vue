@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { st, closeHistory, historyList, restoreSnapshot } from '../store'
 import { fmtFull } from '../lib/format'
+import { t } from '../lib/i18n'
 
 const rows = historyList
 </script>
@@ -18,12 +19,12 @@ const rows = historyList
         <header
           class="flex items-center justify-between border-b border-zinc-200 px-4 py-2.5 dark:border-zinc-800"
         >
-          <span class="text-sm font-semibold text-zinc-800 dark:text-zinc-100">🕘 历史快照</span>
-          <button class="btn" @click="closeHistory()">✕ 关闭</button>
+          <span class="text-sm font-semibold text-zinc-800 dark:text-zinc-100">{{ t('hist.title') }}</span>
+          <button class="btn" @click="closeHistory()">{{ t('hist.close') }}</button>
         </header>
 
         <p class="border-b border-zinc-100 px-4 py-2 text-xs leading-5 text-zinc-400 dark:border-zinc-800 dark:text-zinc-500">
-          输入过程中每隔约 20 秒自动留一份快照（最多 40 份）。点击时间即可把编辑区恢复到该版本；当前内容会自动转入「回退一步」的重做位。
+          {{ t('hist.hint') }}
         </p>
 
         <ul v-if="rows.length" class="flex-1 overflow-y-auto p-2">
@@ -35,13 +36,15 @@ const rows = historyList
             <span class="min-w-[150px] font-mono text-xs tabular-nums text-zinc-600 dark:text-zinc-300">
               {{ fmtFull(s.t) }}
             </span>
-            <span class="flex-1 text-[11px] text-zinc-400 dark:text-zinc-500">{{ s.c.length }} 字符</span>
-            <button class="btn" @click="restoreSnapshot(s.t)">恢复</button>
+            <span class="flex-1 text-[11px] text-zinc-400 dark:text-zinc-500">
+              {{ t('hist.chars', { n: s.c.length }) }}
+            </span>
+            <button class="btn" @click="restoreSnapshot(s.t)">{{ t('hist.restore') }}</button>
           </li>
         </ul>
 
         <div v-else class="px-4 py-10 text-center text-xs text-zinc-400 dark:text-zinc-500">
-          暂无快照 —— 输入内容后会自动开始记录。
+          {{ t('hist.empty') }}
         </div>
       </div>
     </div>

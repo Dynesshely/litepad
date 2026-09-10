@@ -14,6 +14,7 @@ import {
   persistNow,
   showToast,
 } from '../store'
+import { locale, t } from '../lib/i18n'
 
 const host = ref<HTMLDivElement | null>(null)
 
@@ -58,8 +59,7 @@ onMounted(() => {
       horizontalScrollbarSize: 10,
       alwaysConsumeMouseWheel: false,
     },
-    placeholder:
-      '在这里开始输入……\n\n内容会自动保存到本浏览器的 localStorage：无需 Ctrl+S、无需任何手动保存，直接关闭标签页、刷新都不丢。\n\n· Ctrl+S 已被拦截（你不需要保存文件）\n· 想再开一篇临时稿：点「＋ 新建」或新开一个浏览器标签打开本页\n· 担心手滑删光？「🕘 历史快照」和「↩ 回退一步」可以救回来',
+    placeholder: t('monaco.placeholder'),
   })
 
   bindEditorSink({
@@ -74,12 +74,12 @@ onMounted(() => {
 
   cmdDisposable = editor.addAction({
     id: 'scratch.autosave.flush',
-    label: '立即保存（自动保存已开启，无需手动保存）',
+    label: t('toast.noManualSave'),
     keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS],
     contextMenuGroupId: 'navigation',
     run: () => {
       persistNow()
-      showToast('无需手动保存：内容已自动保存')
+      showToast(t('toast.noManualSave'))
     },
   })
 
@@ -90,6 +90,11 @@ watch(
   () => st.dark,
   (dark) => monaco.editor.setTheme(dark ? 'vs-dark' : 'vs'),
 )
+
+// 切换语言时同步占位符文案
+watch(locale, () => {
+  editor?.updateOptions({ placeholder: t('monaco.placeholder') })
+})
 
 onBeforeUnmount(() => {
   bindEditorSink(null)

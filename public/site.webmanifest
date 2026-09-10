@@ -1,0 +1,30 @@
+{
+  "name": "临时草稿本 · 自动保存",
+  "short_name": "草稿本",
+  "description": "纯本地 localStorage 自动保存的临时文本编辑器，无需手动保存",
+  "lang": "zh-CN",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f4f4f5",
+  "theme_color": "#6366f1",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon-32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

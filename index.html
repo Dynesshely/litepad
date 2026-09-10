@@ -4,9 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#6366f1" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#4338ca" media="(prefers-color-scheme: dark)" />
+    <!-- 站点图标：SVG 优先，ICO/PNG 回退，另有 iOS 图标与站点清单 -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
     <title>临时草稿本 · 自动保存</title>
     <script>
       // 在应用挂载前恢复主题偏好，避免深浅色闪烁（FOUC）

@@ -10,8 +10,10 @@
 - 想要“第二块草稿纸”时，**新开一个浏览器标签**即可 —— 每个标签自动对应一篇独立草稿；
 - 内容随输入自动保存（防抖 400ms），关闭标签/刷新/断电重启都不丢；
 - 误删不怕：`doc`/`doc.bak` 双键轮换 + 每 20 秒一份历史快照（每篇最多 40 份），可随时“回退一步”或从快照恢复；
-- 草稿列表可在浮层抽屉与**左侧全高常驻面板**之间切换（状态持久化）；
+- 草稿列表可在浮层抽屉与**左侧全高常驻面板**之间切换（状态持久化），并支持**拖动排序**（含「最近更新」一键重排）；
 - 每篇草稿可单独指定**文本编码**（UTF-8/UTF-16 全家族 + GBK/Big5/Shift_JIS 等），决定 .txt 导入导出的字节；
+- **中英双语界面**，语言默认跟随浏览器、可随时在工具栏切换（主题按钮左侧）并持久化；
+- 页内 LOGO 与浏览器标签页图标（favicon）**共用同一份 SVG 源码**；
 - 无账号、无网络依赖、数据不经过任何服务器。
 
 ## 运行
@@ -41,14 +43,17 @@ scratch-vue/
     ├── store.ts            # 全局状态与核心逻辑（单例，reactive）
     ├── lib/
     │   ├── storage.ts      # localStorage→sessionStorage→内存 降级读写
-    │   ├── format.ts       # 时间/标题等格式化
+    │   ├── format.ts       # 时间/标题等格式化（走 i18n）
     │   ├── encoding.ts     # 文本编码：UTF 家族编码 + 传统编码反向映射表
+    │   ├── i18n.ts         # 轻量 i18n：zh-CN / en-US 词典、{name} 插值、locale ref
     │   └── download.ts     # Blob / 字节下载
     └── components/
         ├── MonacoEditor.vue  # Monaco 封装（每篇草稿独立 model / undo 栈）
         ├── Toolbar.vue
+        ├── BrandLogo.vue     # 页内 LOGO（?raw 内联 public/favicon.svg）
+        ├── LocaleMenu.vue    # 语言切换菜单
         ├── StatusBar.vue     # 保存状态 · 编码 · 占用 · 字符统计
-        ├── DocList.vue       # 草稿列表（抽屉与固定面板共用）
+        ├── DocList.vue       # 草稿列表（抽屉/固定面板共用，含拖动排序）
         ├── DocDrawer.vue     # 浮层抽屉外壳
         ├── EncodingMenu.vue  # 编码选择菜单（含按编码导入 .txt）
         ├── HistoryModal.vue  # 历史快照弹层
@@ -73,11 +78,25 @@ scratch-vue/
 - 目标编码无法表示的字符会写成 `?`，导出时状态栏提示会给出数量；
 - 导入 .txt 时**优先识别 BOM**（UTF-8/UTF-16），无 BOM 才用草稿当前编码解读。
 
+## 界面语言（i18n）
+
+- 内置 **简体中文 / English** 两套文案，入口在工具栏**主题按钮左侧**（🌐），切换后立即生效并持久化；
+- 首次访问时语言跟随浏览器（`navigator.language` 以 `zh` 开头 → 中文，否则英文）；
+- 状态栏的保存文案存储为 `saveKey + 时间戳`，因此**切换语言的瞬间**已显示的"已自动保存 12:03:05"也会跟着翻译；
+- 新增语言：在 `src/lib/i18n.ts` 的 `LOCALES` 与 `messages` 里各加一项即可（缺失的 key 会回退到 zh-CN，开发模式下控制台会告警）。
+
+## 草稿列表排序
+
+- 列表默认按**手动顺序**（元数据 `order` 字段）排列，**拖动行即可调整**：位移超过 4px 才算拖动（因此点击切换草稿不受影响），拖动结束后紧接着的 click 会被抑制一次；
+- 新草稿总是插到列表**最前**（`order` 取当前最小值 - 1）；
+- 老数据（没有 `order`）首次启动时按"最近更新优先"补一份初始顺序；
+- 点列表里的「⇅ 最近更新」可放弃手动顺序，重新按修改时间排序。
+
 ## 数据与自动保存机制
 
-- **存储键**：`dsh.scratch.v1.index`（草稿元数据，含每篇的 `encoding`）、`dsh.scratch.v1.doc.<id>`（正文）、
+- **存储键**：`dsh.scratch.v1.index`（草稿元数据，含 `encoding` 与 `order`）、`dsh.scratch.v1.doc.<id>`（正文）、
   `dsh.scratch.v1.doc.<id>.bak`（上一次保存的备份）、`dsh.scratch.v1.doc.<id>.hist`（历史快照）、
-  `dsh.scratch.v1.ui`（主题 + 列表固定偏好）。
+  `dsh.scratch.v1.ui`（主题 + 列表固定 + 界面语言偏好）。
   键契约与旧版单文件原型（`legacy/scratch.html`）一致 —— 换到本工程后旧草稿自动继承。
 - **触发时机**：输入停止 400ms 后落盘；`visibilitychange`/`pagehide`/`beforeunload` 强制 flush。
 - **配额写满**：自动降级到 sessionStorage 并红色横幅警示，状态栏实时显示占用空间。

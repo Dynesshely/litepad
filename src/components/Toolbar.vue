@@ -14,6 +14,7 @@ import {
 } from '../store'
 import { locale, localeShort, t } from '../lib/i18n'
 import LocaleMenu from './LocaleMenu.vue'
+import BrandLogo from './BrandLogo.vue'
 
 const fileInput = ref<HTMLInputElement | null>(null)
 const langOpen = ref(false)
@@ -34,7 +35,7 @@ function onLocale(id: string): void {
     class="flex flex-wrap items-center gap-1.5 border-b border-zinc-200 bg-white px-3 py-2 dark:border-zinc-800 dark:bg-zinc-900"
   >
     <div class="mr-2 flex select-none items-center gap-1.5 text-sm font-semibold text-zinc-800 dark:text-zinc-100">
-      <span class="grid h-6 w-6 place-items-center rounded-md bg-indigo-500 text-xs text-white shadow-sm">✎</span>
+      <BrandLogo />
       {{ t('app.title') }}
     </div>
 

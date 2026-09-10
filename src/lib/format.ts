@@ -1,3 +1,5 @@
+import { t } from './i18n'
+
 export const pad2 = (n: number): string => (n < 10 ? '0' + n : String(n))
 
 export function fmtFull(ts: number): string {
@@ -18,9 +20,9 @@ export function fmtStamp(ts: number): string {
 
 export function fmtRel(ts: number): string {
   const diff = Date.now() - ts
-  if (diff < 60e3) return '刚刚'
-  if (diff < 3600e3) return `${Math.floor(diff / 60e3)} 分钟前`
-  if (diff < 86400e3) return `${Math.floor(diff / 3600e3)} 小时前`
+  if (diff < 60e3) return t('time.justNow')
+  if (diff < 3600e3) return t('time.minutesAgo', { n: Math.floor(diff / 60e3) })
+  if (diff < 86400e3) return t('time.hoursAgo', { n: Math.floor(diff / 3600e3) })
   return fmtFull(ts).slice(0, 16)
 }
 
@@ -28,10 +30,10 @@ export function fmtRel(ts: number): string {
 export function titleOf(text: string): string {
   const lines = String(text).split('\n')
   for (const raw of lines) {
-    const t = raw.trim()
-    if (t) return t.length > 40 ? t.slice(0, 40) + '…' : t
+    const line = raw.trim()
+    if (line) return line.length > 40 ? line.slice(0, 40) + '…' : line
   }
-  return '未命名'
+  return t('doc.untitled')
 }
 
 /** 把标题转成安全的文件名片段 */

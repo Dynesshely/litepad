@@ -38,7 +38,7 @@ npm run typecheck
 litepad/
 ├── index.html              # 入口（防主题闪烁脚本 + 站点图标/清单声明）
 ├── vite.config.ts
-├── public/                 # 站点图标：favicon.svg / favicon.ico / favicon-32.png / apple-touch-icon.png / site.webmanifest
+├── public/                 # 站点图标：favicon.ico / favicon-32.png / apple-touch-icon.png / site.webmanifest（favicon.svg 单一来源在 src/assets，由 Vite 插件在 dev 提供并输出到产物）
 └── src/
     ├── main.ts             # 应用入口
     ├── App.vue             # 布局壳（含左侧固定面板的 flex 布局）
@@ -53,7 +53,7 @@ litepad/
     └── components/
         ├── MonacoEditor.vue  # Monaco 封装（每篇草稿独立 model / undo 栈）
         ├── Toolbar.vue
-        ├── BrandLogo.vue     # 页内 LOGO（?raw 内联 public/favicon.svg）
+        ├── BrandLogo.vue     # 页内 LOGO（?raw 内联 src/assets/favicon.svg）
         ├── AboutModal.vue    # 「关于 Litepad」面板（macOS 版式 + 复制诊断信息）
         ├── LocaleMenu.vue    # 语言切换菜单
         ├── StatusBar.vue     # 保存状态 · 编码 · 占用 · 字符统计

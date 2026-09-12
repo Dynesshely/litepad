@@ -4,3 +4,7 @@ dist/
 .DS_Store
 npm-debug.log*
 .npm-cache/
+
+# 本地开发服务器（scripts/dev-server.sh）产生的运行时文件
+.dev-server.pid
+.dev-server.log

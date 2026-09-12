@@ -21,6 +21,12 @@ function gitShortSha(): string {
   }
 }
 
+/**
+ * 反代/自定义域名白名单：Vite 会对 Host 头做校验，未列入的主机会返回 403。
+ * 需要新增域名时加到这里（以 "." 开头表示同时允许其子域）。
+ */
+const ALLOWED_HOSTS = ['litepad.dev-u26-001.services.local']
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [vue(), tailwindcss()],
@@ -35,9 +41,11 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 18080, // 固定五位数端口，dev 与 preview 统一（同一时刻只跑一个）
+    allowedHosts: ALLOWED_HOSTS,
   },
   preview: {
     host: '0.0.0.0',
     port: 18080,
+    allowedHosts: ALLOWED_HOSTS,
   },
 })

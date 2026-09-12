@@ -26,9 +26,9 @@ export const FALLBACK_LOCALE: LocaleId = 'zh-CN'
 
 const messages: Record<LocaleId, Record<string, string>> = {
   'zh-CN': {
-    'app.title': '临时草稿本',
-    'app.titleAuto': '临时草稿本 · 自动保存',
-    'app.docTitle': '{title} — 临时草稿本',
+    'app.title': 'Lightpad',
+    'app.titleAuto': 'Lightpad · 自动保存',
+    'app.docTitle': '{title} — Lightpad',
     'doc.untitled': '未命名',
 
     'tb.new': '＋ 新建',
@@ -145,9 +145,9 @@ const messages: Record<LocaleId, Record<string, string>> = {
   },
 
   'en-US': {
-    'app.title': 'Scratchpad',
-    'app.titleAuto': 'Scratchpad · Autosave',
-    'app.docTitle': '{title} — Scratchpad',
+    'app.title': 'Lightpad',
+    'app.titleAuto': 'Lightpad · Autosave',
+    'app.docTitle': '{title} — Lightpad',
     'doc.untitled': 'Untitled',
 
     'tb.new': '＋ New',

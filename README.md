@@ -1,4 +1,6 @@
-# 临时草稿本（scratch-vue）
+# Lightpad
+
+> 原项目名 `scratch-vue`，现更名 **Lightpad**（目录同步为 `lightpad/`）。存储键命名空间仍保留 `dsh.scratch.v1`，以免旧草稿丢失。
 
 纯本地、零后端、自动保存的临时文本编辑器。**每个草稿都只存在于你自己浏览器的 `localStorage`**，
 无需 Ctrl+S、不弹任何保存对话框；数据落盘策略详见下文。
@@ -32,7 +34,7 @@ npm run typecheck
 ## 目录结构
 
 ```
-scratch-vue/
+lightpad/
 ├── index.html              # 入口（防主题闪烁脚本 + 站点图标/清单声明）
 ├── vite.config.ts
 ├── public/                 # 站点图标：favicon.svg / favicon.ico / favicon-32.png / apple-touch-icon.png / site.webmanifest

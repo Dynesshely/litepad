@@ -32,6 +32,26 @@ npm run typecheck
 > 注意：务必通过 **http**（dev/preview，或任意静态服务器）访问，不要在 `file://` 下使用——
 > 不同浏览器对 `file://` 页面 localStorage 的支持不一致（页面会提示并自检）。
 
+## 开发服务器启停（DevHub）
+
+本项目遵循全局 DevHub 规则（全文见 `~/.devhub/README.md`）：**长驻开发服务器一律通过 `devctl` 启停**，
+禁止 `pkill` / `killall` / 裸 `nohup … &` / 会话后台任务等方式——按名字杀进程无法区分归属，会误伤其他会话的服务。
+
+```bash
+~/.devhub/devctl status litepad --json            # 查登记表与运行态
+~/.devhub/devctl start  litepad dev --wait-ready  # 启动（登记命令：dev / build）
+~/.devhub/devctl stop   litepad dev               # 停止
+~/.devhub/devctl restart litepad dev              # 重启
+~/.devhub/devctl logs   litepad dev --tail 50     # 查看日志
+```
+
+登记信息：`dev = npm run dev -- --port ${PORT} --strictPort --host 0.0.0.0`，端口 `18080`（`npm` 需要 `--`
+分隔符，否则 `--port/--strictPort/--host` 会被 npm 自身吞掉），`singleton: true`。
+
+> **AI 会话注意**：`devctl` 需要写入 `~/.devhub/state/**`，该路径位于会话工作区之外（文件沙箱只读），
+> 因此 AI **无法自行执行** `claim` / `start` / `stop`；这种情况应**停下来请在终端执行**，
+> 不得改用 `pkill` / `nohup` / `run_in_background` 变通。
+
 ## 目录结构
 
 ```

@@ -118,7 +118,7 @@ export const st = reactive({
   /** 草稿列表是否固定为左侧常驻面板（全高） */
   sidebarPinned: false,
   historyOpen: false,
-  /** 「关于 Lightpad」弹窗 */
+  /** 「关于 Litepad」弹窗 */
   aboutOpen: false,
   toast: null as { seq: number; msg: string } | null,
   banner: null as Banner | null,

@@ -26,9 +26,9 @@ export const FALLBACK_LOCALE: LocaleId = 'zh-CN'
 
 const messages: Record<LocaleId, Record<string, string>> = {
   'zh-CN': {
-    'app.title': 'Lightpad',
-    'app.titleAuto': 'Lightpad · 自动保存',
-    'app.docTitle': '{title} — Lightpad',
+    'app.title': 'Litepad',
+    'app.titleAuto': 'Litepad · 自动保存',
+    'app.docTitle': '{title} — Litepad',
     'doc.untitled': '未命名',
 
     'tb.new': '＋ 新建',
@@ -143,7 +143,7 @@ const messages: Record<LocaleId, Record<string, string>> = {
     'time.minutesAgo': '{n} 分钟前',
     'time.hoursAgo': '{n} 小时前',
 
-    'about.open': '关于 Lightpad',
+    'about.open': '关于 Litepad',
     'about.version': '版本 {version}',
     'about.build': '构建 {build}',
     'about.row.version': '版本',
@@ -174,9 +174,9 @@ const messages: Record<LocaleId, Record<string, string>> = {
   },
 
   'en-US': {
-    'app.title': 'Lightpad',
-    'app.titleAuto': 'Lightpad · Autosave',
-    'app.docTitle': '{title} — Lightpad',
+    'app.title': 'Litepad',
+    'app.titleAuto': 'Litepad · Autosave',
+    'app.docTitle': '{title} — Litepad',
     'doc.untitled': 'Untitled',
 
     'tb.new': '＋ New',
@@ -294,7 +294,7 @@ const messages: Record<LocaleId, Record<string, string>> = {
     'time.minutesAgo': '{n} min ago',
     'time.hoursAgo': '{n} h ago',
 
-    'about.open': 'About Lightpad',
+    'about.open': 'About Litepad',
     'about.version': 'Version {version}',
     'about.build': 'Build {build}',
     'about.row.version': 'Version',

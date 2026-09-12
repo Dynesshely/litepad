@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * 「关于 Lightpad」弹窗：版式模仿新版 macOS 的关于面板——
+ * 「关于 Litepad」弹窗：版式模仿新版 macOS 的关于面板——
  * 顶部居中图标 / 应用名 / 版本号，中间为带细分割线的规格行，底部为操作按钮。
  */
 import { computed, onBeforeUnmount, onMounted } from 'vue'
@@ -35,7 +35,7 @@ const rows = computed(() => [
 
 function diagnostics(): string {
   return [
-    `Lightpad ${version} (build ${build})`,
+    `Litepad ${version} (build ${build})`,
     `locale: ${locale.value} · theme: ${st.dark ? 'dark' : 'light'}`,
     `drafts: ${docs.value.length} · current: ${currentMeta.value?.title ?? '-'} (${st.chars} chars)`,
     `origin usage: ${st.quotaSize || 'n/a'} · encoding: ${encodingLabel(currentMeta.value?.encoding)}`,

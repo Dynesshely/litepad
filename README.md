@@ -1,6 +1,6 @@
-# Lightpad
+# Litepad
 
-> 原项目名 `scratch-vue`，现更名 **Lightpad**（目录同步为 `lightpad/`）。存储键命名空间仍保留 `dsh.scratch.v1`，以免旧草稿丢失。
+> 原项目名 `scratch-vue`，现更名 **Litepad**（目录同步为 `litepad/`）。存储键命名空间仍保留 `dsh.scratch.v1`，以免旧草稿丢失。
 
 纯本地、零后端、自动保存的临时文本编辑器。**每个草稿都只存在于你自己浏览器的 `localStorage`**，
 无需 Ctrl+S、不弹任何保存对话框；数据落盘策略详见下文。
@@ -16,7 +16,7 @@
 - 每篇草稿可单独指定**文本编码**（UTF-8/UTF-16 全家族 + GBK/Big5/Shift_JIS 等），决定 .txt 导入导出的字节；
 - **中英双语界面**，语言默认跟随浏览器、可随时在工具栏切换（主题按钮左侧）并持久化；
 - 页内 LOGO 与浏览器标签页图标（favicon）**共用同一份 SVG 源码**；
-- 点工具栏品牌区打开**「关于 Lightpad」**面板（模仿新版 macOS 关于页面），可查看版本/构建号与运行信息、一键复制诊断信息；
+- 点工具栏品牌区打开**「关于 Litepad」**面板（模仿新版 macOS 关于页面），可查看版本/构建号与运行信息、一键复制诊断信息；
 - 无账号、无网络依赖、数据不经过任何服务器。
 
 ## 运行
@@ -35,7 +35,7 @@ npm run typecheck
 ## 目录结构
 
 ```
-lightpad/
+litepad/
 ├── index.html              # 入口（防主题闪烁脚本 + 站点图标/清单声明）
 ├── vite.config.ts
 ├── public/                 # 站点图标：favicon.svg / favicon.ico / favicon-32.png / apple-touch-icon.png / site.webmanifest
@@ -54,7 +54,7 @@ lightpad/
         ├── MonacoEditor.vue  # Monaco 封装（每篇草稿独立 model / undo 栈）
         ├── Toolbar.vue
         ├── BrandLogo.vue     # 页内 LOGO（?raw 内联 public/favicon.svg）
-        ├── AboutModal.vue    # 「关于 Lightpad」面板（macOS 版式 + 复制诊断信息）
+        ├── AboutModal.vue    # 「关于 Litepad」面板（macOS 版式 + 复制诊断信息）
         ├── LocaleMenu.vue    # 语言切换菜单
         ├── StatusBar.vue     # 保存状态 · 编码 · 占用 · 字符统计
         ├── DocList.vue       # 草稿列表（抽屉/固定面板共用，含拖动排序）
@@ -67,7 +67,7 @@ lightpad/
 
 ## 关于面板与版本注入
 
-- 入口：工具栏品牌区（Logo + Lightpad 文字）即按钮，`title` 为「关于 Lightpad」；面板内可 `Esc`、点遮罩或「关闭」退出；
+- 入口：工具栏品牌区（Logo + Litepad 文字）即按钮，`title` 为「关于 Litepad」；面板内可 `Esc`、点遮罩或「关闭」退出；
 - 版式：顶部居中 64px 大图标（与 favicon 同源）→ 应用名 → `版本 x.y.z · 构建 <git 短哈希>`，中部为带细分割线的规格行（内核/框架/存储/占用/草稿数/当前草稿/语言/主题/快照策略），底部为操作按钮；
 - 版本号与构建号由 `vite.config.ts` 的 `define` 在构建期注入（`__APP_VERSION__` 取自 `package.json`，`__APP_BUILD__` 取 `git rev-parse --short HEAD`，非 git 环境回退为 `dev`）；
 - 「复制诊断信息」写出：版本/构建号、语言与主题、草稿数量与当前草稿字符数、本页占用、User-Agent；剪贴板不可用时回退到 `execCommand`。

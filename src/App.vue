@@ -6,6 +6,7 @@ import StatusBar from './components/StatusBar.vue'
 import DocDrawer from './components/DocDrawer.vue'
 import DocList from './components/DocList.vue'
 import HistoryModal from './components/HistoryModal.vue'
+import AboutModal from './components/AboutModal.vue'
 import BannerHost from './components/BannerHost.vue'
 import ToastHost from './components/ToastHost.vue'
 
@@ -41,6 +42,7 @@ init()
     <StatusBar />
     <DocDrawer />
     <HistoryModal />
+    <AboutModal />
     <ToastHost />
   </div>
 </template>

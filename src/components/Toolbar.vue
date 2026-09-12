@@ -7,6 +7,7 @@ import {
   createNewDoc,
   exportCurrentTxt,
   importBackupFile,
+  openAbout,
   openHistory,
   toggleDark,
   toggleSidebar,
@@ -34,13 +35,16 @@ function onLocale(id: string): void {
   <header
     class="flex flex-wrap items-center gap-1.5 border-b border-zinc-200 bg-white px-3 py-2 dark:border-zinc-800 dark:bg-zinc-900"
   >
-    <div
+    <!-- 品牌区即「关于」入口（点 Logo 或名称打开，类似 macOS 的关于面板） -->
+    <button
       data-testid="brand"
-      class="mr-2 flex select-none items-center gap-1.5 text-sm font-semibold text-zinc-800 dark:text-zinc-100"
+      class="mr-2 flex cursor-pointer select-none items-center gap-1.5 rounded-md px-1 py-0.5 text-sm font-semibold text-zinc-800 transition-colors hover:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-800"
+      :title="t('about.open')"
+      @click="openAbout()"
     >
       <BrandLogo />
       {{ t('app.title') }}
-    </div>
+    </button>
 
     <button class="btn" :title="t('tb.newTitle')" @click="createNewDoc()">{{ t('tb.new') }}</button>
     <button

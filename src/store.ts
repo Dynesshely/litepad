@@ -118,9 +118,13 @@ export const st = reactive({
   /** 草稿列表是否固定为左侧常驻面板（全高） */
   sidebarPinned: false,
   historyOpen: false,
+  /** 「关于 Lightpad」弹窗 */
+  aboutOpen: false,
   toast: null as { seq: number; msg: string } | null,
   banner: null as Banner | null,
   quota: '',
+  /** 仅供「关于」页展示的纯数值（如 “12 KB”），与状态栏的整句文案分开 */
+  quotaSize: '',
   quotaWarn: false,
 })
 
@@ -268,6 +272,7 @@ export function refreshQuota(force = false): void {
   lastQuotaAt = now
   if (!isStoreOk()) {
     st.quota = ''
+    st.quotaSize = ''
     st.quotaWarn = false
     return
   }
@@ -282,10 +287,12 @@ export function refreshQuota(force = false): void {
       used >= 1048576
         ? `${(used / 1048576).toFixed(2)} MB`
         : `${Math.round(used / 1024)} KB`
+    st.quotaSize = txt
     st.quota = used > 4e6 ? t('st.quotaFull', { size: txt }) : t('st.quota', { size: txt })
     st.quotaWarn = used > 4e6
   } catch {
     st.quota = ''
+    st.quotaSize = ''
     st.quotaWarn = false
   }
 }
@@ -707,6 +714,15 @@ export function openHistory(): void {
 }
 export function closeHistory(): void {
   st.historyOpen = false
+}
+
+/* ---------------- 关于 ---------------- */
+export function openAbout(): void {
+  st.aboutOpen = true
+  refreshQuota(true)
+}
+export function closeAbout(): void {
+  st.aboutOpen = false
 }
 
 /* ---------------- 全局事件 ---------------- */

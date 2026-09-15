@@ -92,6 +92,25 @@ litepad/
 - 版本号与构建号由 `vite.config.ts` 的 `define` 在构建期注入（`__APP_VERSION__` 取自 `package.json`，`__APP_BUILD__` 取 `git rev-parse --short HEAD`，非 git 环境回退为 `dev`）；
 - 「复制诊断信息」写出：版本/构建号、语言与主题、草稿数量与当前草稿字符数、本页占用、User-Agent；剪贴板不可用时回退到 `execCommand`。
 
+## 设置弹窗
+
+顶栏右侧「设置」按钮（或 `Ctrl/⌘+,`、命令菜单「打开设置」）打开设置弹窗，版式为
+**上部整宽顶栏（搜索框）+ 下部左侧分页 / 右侧内容**。
+
+- **搜索跳转**：顶栏搜索框索引全部设置项（标题 / id / 关键词，中英双语），命中后回车或点击即切换分页、
+  把对应设置行滚动进可视区并短暂高亮（`↑↓` 选择 · `Enter` 跳转 · `Esc` 关闭）；
+- **外观**：主题（浅色 / 深色）、界面语言、**背景图片**、图片可见度；
+- **数据**：导入备份、备份全部（原先在顶栏，已迁入此页）、存储占用、草稿数量。
+
+### 背景图片（存 IndexedDB）
+
+- 图片以 Blob 写入 **IndexedDB**（库 `litepad-assets` / store `assets` / 键 `appearance.background`）——
+  localStorage 按 UTF-16 计费且只有约 5MB，不适合放图片；只有「可见度」这类小偏好留在 localStorage；
+- 读取时用 `URL.createObjectURL` 生成会话内 URL（不把 base64 存进 localStorage），替换或清除时 `revokeObjectURL`；
+- 应用后给根容器加 `.has-bg`：各面板半透明、Monaco 背景透明，并叠一层随主题变化的遮罩，
+  **遮罩强度 = 100 − 可见度**（数值越低正文越清晰）；
+- 限制：仅图片类型、上限 8MB；IndexedDB 不可用（如部分隐私模式）时会明确提示而不是静默失败。
+
 ## 图标（Lucide）
 
 界面图标统一使用 **[Lucide](https://lucide.dev)**（`@lucide/vue`，**ISC 许可**，免费开源，3600+ 图标），

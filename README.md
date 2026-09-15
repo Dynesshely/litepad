@@ -6,6 +6,8 @@
 
 技术栈：Vue 3 + TypeScript + Vite + Tailwind CSS v4 + Monaco Editor（VS Code 同款编辑器内核）。
 
+![Litepad 主界面：深色主题 + 背景图片 + 左侧常驻草稿列表](docs/images/overview-dark.png)
+
 ## 特性
 
 - **自动保存**：停止输入 400ms 落盘，切换标签/关闭页面/刷新都会强制落盘，断电重启也不丢；

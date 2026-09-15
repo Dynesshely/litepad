@@ -63,6 +63,7 @@ litepad/
 │                           #（favicon.svg 单一来源在 src/assets，由 Vite 插件在 dev 提供并输出到产物）
 ├── legacy/scratch.html     # 最初的零依赖单文件原型（同一套存储契约），可随时对照或删除
 ├── docs/                   # DEVELOPMENT.md（本文件） / IMPLEMENTATION.md（实现笔记）
+│                           # images/：README 里展示用的截图（overview-dark.png，2x 分辨率）
 └── src/
     ├── main.ts             # 应用入口
     ├── App.vue             # 布局壳（壁纸图层 + 左侧固定面板的 flex 布局 + 各弹层挂载点）

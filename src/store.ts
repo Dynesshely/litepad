@@ -148,6 +148,8 @@ export const st = reactive({
     opacity: 60,
     /** 背景图模糊度（px） */
     blur: 0,
+    /** 壁纸下是否给编辑区留一层淡底色（默认关：编辑区完全透出壁纸） */
+    editorTint: false,
   },
   /** 命令参数输入 / 信息展示弹框 */
   dialog: {
@@ -683,6 +685,8 @@ interface UiPref {
   bgBlur: number
   /** 是否已设置壁纸（同步标记，让首屏在 IndexedDB 读完前就切好透明根背景） */
   hasBg: boolean
+  /** 壁纸下编辑区是否保留淡底色 */
+  editorTint: boolean
 }
 
 function loadUiPref(): UiPref {
@@ -692,6 +696,7 @@ function loadUiPref(): UiPref {
   let bgOpacity = 60
   let bgBlur = 0
   let hasBg = false
+  let editorTint = false
   try {
     const raw = rawGet(UI_KEY)
     if (raw) {
@@ -702,6 +707,7 @@ function loadUiPref(): UiPref {
         bgOpacity?: unknown
         bgBlur?: unknown
         hasBg?: unknown
+        editorTint?: unknown
       }
       if (typeof p.dark === 'boolean') dark = p.dark
       if (typeof p.sidebarPinned === 'boolean') sidebarPinned = p.sidebarPinned
@@ -709,6 +715,7 @@ function loadUiPref(): UiPref {
       if (typeof p.bgOpacity === 'number') bgOpacity = Math.max(0, Math.min(100, p.bgOpacity))
       if (typeof p.bgBlur === 'number') bgBlur = Math.max(0, Math.min(40, p.bgBlur))
       if (typeof p.hasBg === 'boolean') hasBg = p.hasBg
+      if (typeof p.editorTint === 'boolean') editorTint = p.editorTint
     }
   } catch {
     /* 忽略 */
@@ -716,7 +723,7 @@ function loadUiPref(): UiPref {
   if (dark === null) {
     dark = !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)
   }
-  return { dark, sidebarPinned, locale: loc || detectLocale(), bgOpacity, bgBlur, hasBg }
+  return { dark, sidebarPinned, locale: loc || detectLocale(), bgOpacity, bgBlur, hasBg, editorTint }
 }
 
 function saveUiPref(): void {
@@ -729,6 +736,7 @@ function saveUiPref(): void {
       bgOpacity: st.appearance.opacity,
       bgBlur: st.appearance.blur,
       hasBg: st.appearance.hasImage,
+      editorTint: st.appearance.editorTint,
     }),
   )
 }
@@ -960,7 +968,10 @@ let bgObjectUrl: string | null = null
 
 function syncBackgroundClass(): void {
   // 把「是否有壁纸」挂到 <html> 上，与 .dark 同层，CSS 变量据此切换半透明表面与透明根背景
-  document.documentElement.classList.toggle('has-bg', !!(st.appearance.imageUrl || st.appearance.hasImage))
+  const hasBg = !!(st.appearance.imageUrl || st.appearance.hasImage)
+  document.documentElement.classList.toggle('has-bg', hasBg)
+  // 底色只在壁纸下有意义；没有壁纸时编辑区本来就用主题色
+  document.documentElement.classList.toggle('editor-tint', hasBg && st.appearance.editorTint)
 }
 
 /** 记录/清除「已设置壁纸」标记（同步写 localStorage，供下次首屏立即生效） */
@@ -1020,6 +1031,13 @@ export async function clearBackgroundImage(): Promise<void> {
 
 export function setBackgroundOpacity(value: number): void {
   st.appearance.opacity = Math.max(0, Math.min(100, Math.round(value)))
+  saveUiPref()
+}
+
+/** 壁纸下编辑区是否保留一层淡底色（关 → 完全透出壁纸） */
+export function setEditorTint(value: boolean): void {
+  st.appearance.editorTint = value
+  syncBackgroundClass()
   saveUiPref()
 }
 
@@ -1105,6 +1123,7 @@ export function init(): void {
   st.appearance.blur = pref.bgBlur
   // 先用同步标记切好 has-bg（半透明表面 + 透明根背景），IndexedDB 里的图片随后异步补上
   st.appearance.hasImage = pref.hasBg
+  st.appearance.editorTint = pref.editorTint
   syncBackgroundClass()
   void loadBackgroundImage()
   normalizeOrder()

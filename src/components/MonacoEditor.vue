@@ -189,7 +189,10 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="h-full w-full min-h-0 overflow-hidden bg-[var(--editor-bg)]">
+  <div
+    data-testid="editor-shell"
+    class="h-full w-full min-h-0 overflow-hidden bg-[var(--editor-bg)]"
+  >
     <div ref="host" class="h-full w-full"></div>
   </div>
 </template>

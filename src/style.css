@@ -117,6 +117,14 @@ html.dark.has-bg {
   --editor-bg: transparent;
 }
 
+/* 「编辑区保留底色」开关（默认关）：壁纸花的时候给正文垫一层淡底色，照片仍透出来 */
+html.has-bg.editor-tint {
+  --editor-bg: rgb(255 255 255 / 0.35);
+}
+html.dark.has-bg.editor-tint {
+  --editor-bg: rgb(9 9 11 / 0.25);
+}
+
 /* html 永远保留一层不透明底色（壁纸层绘制在它之上），图片未加载完时也不会闪白 */
 html {
   background-color: var(--app-base);

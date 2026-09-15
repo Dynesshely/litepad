@@ -25,7 +25,10 @@
           var root = document.documentElement
           if (dark) root.classList.add('dark')
           // 图片本体在 IndexedDB 里是异步读回来的，先用同步标记把根背景切透明，避免先闪一层不透明底色
-          if (p && p.hasBg === true) root.classList.add('has-bg')
+          if (p && p.hasBg === true) {
+            root.classList.add('has-bg')
+            if (p.editorTint === true) root.classList.add('editor-tint')
+          }
         } catch (e) {
           /* 忽略 */
         }

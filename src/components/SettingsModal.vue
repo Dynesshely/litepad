@@ -14,6 +14,7 @@ import {
   Languages,
   Moon,
   Search,
+  SquareDashed,
   Sun,
   Upload,
   X,
@@ -31,6 +32,7 @@ import {
   setBackgroundImage,
   setBackgroundOpacity,
   setDark,
+  setEditorTint,
   st,
 } from '../store'
 
@@ -78,6 +80,12 @@ const SETTINGS: SettingItem[] = [
     page: 'appearance',
     labelKey: 'settings.appearance.opacity',
     keywords: ['opacity', 'visibility', 'transparent', '可见度', '透明'],
+  },
+  {
+    id: 'appearance.editorTint',
+    page: 'appearance',
+    labelKey: 'settings.appearance.editorTint',
+    keywords: ['tint', 'panel', 'contrast', '底色', '对比度', '可读'],
   },
   {
     id: 'data.import',
@@ -463,6 +471,40 @@ watch(
                     <span class="w-10 font-mono text-[11px] text-zinc-500 dark:text-zinc-400">
                       {{ st.appearance.opacity }}%
                     </span>
+                  </div>
+                </div>
+
+                <div
+                  :data-setting-row="'appearance.editorTint'"
+                  class="mb-2 rounded-xl border border-zinc-200 p-3 transition-all dark:border-zinc-700"
+                  :class="rowClass('appearance.editorTint')"
+                >
+                  <div class="mb-1 flex items-center gap-1.5 text-xs font-medium text-zinc-700 dark:text-zinc-200">
+                    <SquareDashed class="h-3.5 w-3.5" aria-hidden="true" />
+                    {{ t('settings.appearance.editorTint') }}
+                  </div>
+                  <p class="mb-2 text-[11px] leading-4 text-zinc-400 dark:text-zinc-500">
+                    {{ t('settings.appearance.editorTintHint') }}
+                  </p>
+                  <div class="flex gap-2">
+                    <button
+                      data-testid="editor-tint-on"
+                      class="btn"
+                      :class="st.appearance.editorTint ? 'border-indigo-400 text-indigo-600 dark:text-indigo-300' : ''"
+                      :disabled="!st.appearance.imageUrl"
+                      @click="setEditorTint(true)"
+                    >
+                      {{ t('settings.toggle.on') }}
+                    </button>
+                    <button
+                      data-testid="editor-tint-off"
+                      class="btn"
+                      :class="!st.appearance.editorTint ? 'border-indigo-400 text-indigo-600 dark:text-indigo-300' : ''"
+                      :disabled="!st.appearance.imageUrl"
+                      @click="setEditorTint(false)"
+                    >
+                      {{ t('settings.toggle.off') }}
+                    </button>
                   </div>
                 </div>
               </template>

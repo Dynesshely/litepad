@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { encodingLabel, groupedEncodings, isDecodable } from '../lib/encoding'
 import { t } from '../lib/i18n'
 import { Check, Import } from '@lucide/vue'
@@ -13,6 +13,16 @@ const emit = defineEmits<{
 
 const groups = groupedEncodings()
 const fileInput = ref<HTMLInputElement | null>(null)
+
+/** Esc 关闭：与命令面板 / 设置弹窗 / 语言菜单的行为保持一致 */
+function onKeydown(e: KeyboardEvent): void {
+  if (e.key === 'Escape') {
+    e.preventDefault()
+    emit('close')
+  }
+}
+onMounted(() => window.addEventListener('keydown', onKeydown))
+onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 
 function pick(id: string): void {
   if (!isDecodable(id)) {

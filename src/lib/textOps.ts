@@ -6,22 +6,36 @@
 export interface LineBlock {
   lines: string[]
   trailingNewline: boolean
+  /** 原文使用的主换行符（CRLF 文本在编辑时可能残留 \r，这里统一归一化后再处理） */
+  eol: '\n' | '\r\n'
 }
 
+/**
+ * 把文本切成行块。
+ * 关键：先归一化 CRLF / 孤立 CR，否则从 Windows 粘贴来的文本会在每行尾部残留 `\r`，
+ * 导致「多行转单行」后仍出现断行（`\r` 被编辑器当作换行渲染）。
+ */
 export function splitLineBlock(text: string): LineBlock {
-  const trailingNewline = text.endsWith('\n')
-  const body = trailingNewline ? text.slice(0, -1) : text
-  return { lines: body.length ? body.split('\n') : [], trailingNewline }
+  const eol: '\n' | '\r\n' = text.includes('\r\n') ? '\r\n' : '\n'
+  const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+  const trailingNewline = normalized.endsWith('\n')
+  const body = trailingNewline ? normalized.slice(0, -1) : normalized
+  return { lines: body.length ? body.split('\n') : [], trailingNewline, eol }
 }
 
 export function joinLineBlock(block: LineBlock): string {
   if (!block.lines.length) return ''
-  return block.lines.join('\n') + (block.trailingNewline ? '\n' : '')
+  return block.lines.join(block.eol) + (block.trailingNewline ? block.eol : '')
 }
 
 export function mapLines(text: string, fn: (lines: string[]) => string[]): string {
   const block = splitLineBlock(text)
-  return joinLineBlock({ lines: fn(block.lines), trailingNewline: block.trailingNewline })
+  return joinLineBlock({ lines: fn(block.lines), trailingNewline: block.trailingNewline, eol: block.eol })
+}
+
+/** 归一化换行符（CRLF / CR → LF），供统计等只读逻辑使用 */
+export function normalizeEol(text: string): string {
+  return text.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
 }
 
 /* ---------------- 行操作 ---------------- */
@@ -29,7 +43,9 @@ export function mapLines(text: string, fn: (lines: string[]) => string[]): strin
 /** 多行 → 单行：按连接符拼接（会去掉行尾换行后再拼） */
 export function joinLines(text: string, joiner: string): string {
   const block = splitLineBlock(text)
-  return block.lines.join(joiner) + (block.trailingNewline && block.lines.length ? joiner : '')
+  if (!block.lines.length) return ''
+  const joined = block.lines.join(joiner)
+  return block.trailingNewline ? joined + joiner : joined
 }
 
 /** 把用户输入的 `\n` / `\t` 字面量还原为真实字符 */
@@ -42,7 +58,7 @@ export function splitToLines(text: string, separator: string): string {
   if (!separator) return text
   const block = splitLineBlock(text)
   const out = block.lines.flatMap((line) => line.split(separator))
-  return joinLineBlock({ lines: out, trailingNewline: block.trailingNewline })
+  return joinLineBlock({ lines: out, trailingNewline: block.trailingNewline, eol: block.eol })
 }
 
 const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' })
@@ -100,7 +116,7 @@ export function toggleCommentLines(text: string, prefix = '// '): string {
     if (!line.length) return line
     return allCommented ? line.slice(prefix.length) : prefix + line
   })
-  return joinLineBlock({ lines: out, trailingNewline: block.trailingNewline })
+  return joinLineBlock({ lines: out, trailingNewline: block.trailingNewline, eol: block.eol })
 }
 
 export function markdownQuote(text: string): string {
@@ -197,11 +213,12 @@ export interface TextStats {
 }
 
 export function textStats(text: string): TextStats {
+  const normalized = normalizeEol(text)
   return {
     chars: Array.from(text).length,
     charsNoSpaces: Array.from(text.replace(/\s/g, '')).length,
     words: (text.match(/\S+/g) ?? []).length,
-    lines: text.length ? text.split('\n').length : 0,
+    lines: normalized.length ? normalized.split('\n').length : 0,
     bytes: new TextEncoder().encode(text).length,
   }
 }

@@ -9,6 +9,7 @@ import {
   importBackupFile,
   openAbout,
   openHistory,
+  openPalette,
   toggleDark,
   toggleSidebar,
   undoOneStep,
@@ -61,6 +62,15 @@ function onLocale(id: string): void {
     </button>
     <button class="btn" :disabled="!st.currentId" :title="t('tb.undoTitle')" @click="undoOneStep()">
       {{ t('tb.undo') }}
+    </button>
+    <button
+      data-testid="palette-btn"
+      class="btn"
+      :disabled="!st.currentId"
+      :title="t('cmd.openHint')"
+      @click="openPalette()"
+    >
+      ⌨ {{ t('cmd.open') }}
     </button>
 
     <span class="mx-1 hidden h-4 w-px bg-zinc-200 sm:block dark:bg-zinc-700"></span>

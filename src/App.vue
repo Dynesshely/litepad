@@ -7,6 +7,8 @@ import DocDrawer from './components/DocDrawer.vue'
 import DocList from './components/DocList.vue'
 import HistoryModal from './components/HistoryModal.vue'
 import AboutModal from './components/AboutModal.vue'
+import CommandPalette from './components/CommandPalette.vue'
+import PromptDialog from './components/PromptDialog.vue'
 import BannerHost from './components/BannerHost.vue'
 import ToastHost from './components/ToastHost.vue'
 
@@ -43,6 +45,8 @@ init()
     <DocDrawer />
     <HistoryModal />
     <AboutModal />
+    <CommandPalette v-if="st.paletteOpen" />
+    <PromptDialog />
     <ToastHost />
   </div>
 </template>

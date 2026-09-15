@@ -19,6 +19,7 @@ import {
   rawDel,
 } from './lib/storage'
 import { fmtFull, fmtRel, fmtStamp, timeHM, titleOf, safeName } from './lib/format'
+import { commandTitle, findCommand, type TextTarget } from './lib/commands'
 import { downloadBlob, downloadBytes } from './lib/download'
 import {
   DEFAULT_ENCODING,
@@ -61,9 +62,21 @@ const SNAP_MAX_CHARS = 600000 // 每篇快照合计字符上限
 export interface EditorSink {
   getText(): string
   setText(text: string): void
+  /** 当前选区/光标所在的文本快照，供命令菜单使用 */
+  getTarget(): TextTarget
+  /** 单步替换一段范围（走编辑器 undo 栈，可被一次 Ctrl+Z 撤销） */
+  replaceRange(start: number, end: number, text: string): void
+  /** 选中一段范围（不修改内容） */
+  selectRange(start: number, end: number): void
+  /** 跳转并把光标放到指定行（1 基） */
+  goToLine(line: number): void
+  /** 让编辑器重新获得焦点 */
+  focus(): void
 }
 let sink: EditorSink | null = null
 let suppressEvents = false
+/** 输入型弹框的提交回调（不放进 reactive，避免被代理） */
+let pendingPromptSubmit: ((value: string) => void) | null = null
 
 export function bindEditorSink(s: EditorSink | null): void {
   sink = s
@@ -120,6 +133,18 @@ export const st = reactive({
   historyOpen: false,
   /** 「关于 Litepad」弹窗 */
   aboutOpen: false,
+  /** 命令菜单 */
+  paletteOpen: false,
+  /** 命令参数输入 / 信息展示弹框 */
+  dialog: {
+    open: false,
+    mode: 'input' as 'input' | 'info',
+    title: '',
+    label: '',
+    placeholder: '',
+    value: '',
+    rows: [] as { label: string; value: string }[],
+  },
   toast: null as { seq: number; msg: string } | null,
   banner: null as Banner | null,
   quota: '',
@@ -725,6 +750,142 @@ export function closeAbout(): void {
   st.aboutOpen = false
 }
 
+/* ---------------- 命令菜单 ---------------- */
+export function openPalette(): void {
+  if (!st.currentId) return
+  st.paletteOpen = true
+  st.dialog.open = false
+  st.aboutOpen = false
+  st.historyOpen = false
+}
+export function closePalette(): void {
+  st.paletteOpen = false
+}
+export function togglePalette(): void {
+  if (st.paletteOpen) closePalette()
+  else openPalette()
+}
+
+/** 输入型弹框（命令需要参数时） */
+export function openPrompt(opts: { title: string; label: string; placeholder?: string; value?: string }, onSubmit: (value: string) => void): void {
+  pendingPromptSubmit = onSubmit
+  st.dialog = {
+    open: true,
+    mode: 'input',
+    title: opts.title,
+    label: opts.label,
+    placeholder: opts.placeholder ?? '',
+    value: opts.value ?? '',
+    rows: [],
+  }
+}
+export function submitPrompt(): void {
+  const value = st.dialog.value
+  const submit = pendingPromptSubmit
+  closeDialog()
+  if (submit) submit(value)
+}
+export function cancelPrompt(): void {
+  closeDialog()
+}
+/** 信息型弹框（只读命令的结果展示） */
+export function openInfo(title: string, rows: { label: string; value: string }[]): void {
+  pendingPromptSubmit = null
+  st.dialog = { open: true, mode: 'info', title, label: '', placeholder: '', value: '', rows }
+}
+export function closeDialog(): void {
+  pendingPromptSubmit = null
+  st.dialog.open = false
+}
+
+function targetOf(): TextTarget | null {
+  if (!sink) return null
+  return sink.getTarget()
+}
+
+/** 执行一条命令：解析作用范围 → 变换 → 单步替换（或弹框/信息框） */
+export function runCommandById(id: string, arg?: string): void {
+  const def = findCommand(id)
+  if (!def) return
+  const title = commandTitle(def)
+  const target = targetOf()
+  if (!target) {
+    showToast(t('cmd.noEditor'))
+    return
+  }
+
+  if (def.kind === 'info') {
+    const res = def.run(target)
+    openInfo(t(res.titleKey), res.rows)
+    return
+  }
+
+  // 参数来源：选区优先（如「单行转多行」以选中文本作分隔符），否则弹框输入
+  if (def.kind === 'action') {
+    if (def.prompt && arg === undefined) {
+      openPrompt(
+        {
+          title: t(def.prompt.titleKey),
+          label: t(def.prompt.labelKey),
+          placeholder: def.prompt.placeholderKey ? t(def.prompt.placeholderKey) : '',
+          value: def.prompt.defaultValue ?? '',
+        },
+        (value) => runCommandById(id, value),
+      )
+      return
+    }
+    try {
+      def.run({ target, value: arg ?? '', goToLine: (line) => sink?.goToLine(line) })
+    } catch (err) {
+      showToast(t('cmd.error', { title, msg: String(err) }))
+    }
+    return
+  }
+
+  let value = arg
+  if (value === undefined && def.argFromSelection && target.hasSelection) {
+    value = target.selected
+  }
+  if (value === undefined && def.prompt) {
+    openPrompt(
+      {
+        title: t(def.prompt.titleKey),
+        label: t(def.prompt.labelKey),
+        placeholder: def.prompt.placeholderKey ? t(def.prompt.placeholderKey) : '',
+        value: def.prompt.defaultValue ?? '',
+      },
+      (v) => runCommandById(id, v),
+    )
+    return
+  }
+
+  const pick = (): { start: number; end: number; text: string } => {
+    if (def.scope === 'whole') return { start: 0, end: target.full.length, text: target.full }
+    if (def.scope === 'lines') return { start: target.lineStart, end: target.lineEnd, text: target.lineText }
+    return target.hasSelection
+      ? { start: target.selectionStart, end: target.selectionEnd, text: target.selected }
+      : { start: 0, end: target.full.length, text: target.full }
+  }
+  const range = pick()
+  try {
+    const out = def.transform(range.text, value ?? '')
+    if (out === range.text) return
+    suppressEvents = true
+    try {
+      sink?.replaceRange(range.start, range.end, out)
+    } finally {
+      suppressEvents = false
+    }
+    // 命令替换同样应触发自动保存（手动投递一次输入事件）
+    onUserInput(sink?.getText() ?? '')
+    showToast(t('cmd.applied', { title }))
+  } catch (err) {
+    suppressEvents = false
+    const msg = err instanceof Error ? err.message : String(err)
+    showToast(t('cmd.error', { title, msg }))
+  }
+}
+
 /* ---------------- 全局事件 ---------------- */
 function onHashChange(): void {
   const h = hashId()
@@ -736,7 +897,36 @@ function onVisibility(): void {
 }
 function onKeyDown(e: KeyboardEvent): void {
   if (e.defaultPrevented) return
-  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+  const mod = e.ctrlKey || e.metaKey
+  // 命令菜单：Ctrl/⌘+Shift+P 或 F1
+  if ((mod && e.shiftKey && e.key.toLowerCase() === 'p') || e.key === 'F1') {
+    e.preventDefault()
+    togglePalette()
+    return
+  }
+  if (e.key === 'Escape') {
+    if (st.dialog.open) {
+      e.preventDefault()
+      closeDialog()
+      return
+    }
+    if (st.paletteOpen) {
+      e.preventDefault()
+      closePalette()
+      return
+    }
+    if (st.aboutOpen) {
+      e.preventDefault()
+      closeAbout()
+      return
+    }
+    if (st.sidebarOpen) {
+      e.preventDefault()
+      closeSidebar()
+      return
+    }
+  }
+  if (mod && e.key.toLowerCase() === 's') {
     e.preventDefault()
     persistNow()
     showToast(t('toast.noManualSaveAt', { time: timeHM() }))

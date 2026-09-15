@@ -11,6 +11,7 @@ import {
   isSuppressingEvents,
   onEditorReady,
   onUserInput,
+  openPalette,
   persistNow,
   showToast,
 } from '../store'
@@ -21,7 +22,9 @@ const host = ref<HTMLDivElement | null>(null)
 let editor: monaco.editor.IStandaloneCodeEditor | null = null
 let model: monaco.editor.ITextModel | null = null
 let contentDisposable: monaco.IDisposable | null = null
+let cursorDisposable: monaco.IDisposable | null = null
 let cmdDisposable: monaco.IDisposable | null = null
+let paletteDisposable: monaco.IDisposable | null = null
 
 let workerReady = false
 function ensureWorker(): void {
@@ -64,12 +67,77 @@ onMounted(() => {
 
   bindEditorSink({
     getText: () => model?.getValue() ?? '',
-    setText: (text) => model?.setValue(text),
+    setText: (text) => {
+      model?.setValue(text)
+    },
+    getTarget: () => {
+      const m = model!
+      const ed = editor!
+      const sel = ed.getSelection() ?? new monaco.Selection(1, 1, 1, 1)
+      const hasSelection = !sel.isEmpty()
+      const lineStart = m.getOffsetAt(new monaco.Position(sel.startLineNumber, 1))
+      const lineEnd = m.getOffsetAt(
+        new monaco.Position(sel.endLineNumber, m.getLineMaxColumn(sel.endLineNumber)),
+      )
+      return {
+        full: m.getValue(),
+        selected: hasSelection ? m.getValueInRange(sel) : '',
+        hasSelection,
+        selectionStart: m.getOffsetAt(sel.getStartPosition()),
+        selectionEnd: m.getOffsetAt(sel.getEndPosition()),
+        lineText: m.getValueInRange(
+          new monaco.Range(sel.startLineNumber, 1, sel.endLineNumber, m.getLineMaxColumn(sel.endLineNumber)),
+        ),
+        lineStart,
+        lineEnd,
+      }
+    },
+    replaceRange: (start, end, text) => {
+      const m = model!
+      const ed = editor!
+      const from = m.getPositionAt(start)
+      const to = m.getPositionAt(end)
+      // 走 executeEdits：命令式替换是「一步」，可被一次 Ctrl+Z 撤销
+      ed.executeEdits('litepad-command', [
+        {
+          range: new monaco.Range(from.lineNumber, from.column, to.lineNumber, to.column),
+          text,
+          forceMoveMarkers: true,
+        },
+      ])
+      const after = m.getPositionAt(start + text.length)
+      ed.setSelection(
+        new monaco.Range(from.lineNumber, from.column, after.lineNumber, after.column),
+      )
+      ed.focus()
+    },
+    selectRange: (start, end) => {
+      const m = model!
+      const ed = editor!
+      const from = m.getPositionAt(start)
+      const to = m.getPositionAt(end)
+      ed.setSelection(new monaco.Range(from.lineNumber, from.column, to.lineNumber, to.column))
+      ed.focus()
+    },
+    goToLine: (line) => {
+      const ed = editor!
+      const total = model?.getLineCount() ?? 1
+      const target = Math.min(Math.max(1, line), total)
+      ed.revealLineInCenter(target)
+      ed.setPosition({ lineNumber: target, column: 1 })
+      ed.focus()
+    },
+    focus: () => editor?.focus(),
   })
 
   contentDisposable = model.onDidChangeContent(() => {
     if (isSuppressingEvents()) return
     onUserInput(model?.getValue() ?? '')
+  })
+
+  // 测试钩子：把当前光标所在行号写到 <html data-cursor-line>，便于端到端断言导航类命令
+  cursorDisposable = editor.onDidChangeCursorPosition((e) => {
+    document.documentElement.dataset.cursorLine = String(e.position.lineNumber)
   })
 
   cmdDisposable = editor.addAction({
@@ -81,6 +149,17 @@ onMounted(() => {
       persistNow()
       showToast(t('toast.noManualSave'))
     },
+  })
+
+  paletteDisposable = editor.addAction({
+    id: 'litepad.command-palette',
+    label: t('cmd.openHint'),
+    keybindings: [
+      monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyP,
+      monaco.KeyCode.F1,
+    ],
+    contextMenuGroupId: 'navigation',
+    run: () => openPalette(),
   })
 
   onEditorReady()
@@ -98,7 +177,9 @@ watch(locale, () => {
 
 onBeforeUnmount(() => {
   bindEditorSink(null)
+  paletteDisposable?.dispose()
   cmdDisposable?.dispose()
+  cursorDisposable?.dispose()
   contentDisposable?.dispose()
   editor?.dispose()
   editor = null

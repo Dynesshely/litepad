@@ -1,10 +1,18 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { currentEncoding, setCurrentEncoding, st } from '../store'
+import {
+  closeLangMenu,
+  currentEncoding,
+  langDisplayName,
+  setCurrentEncoding,
+  st,
+  toggleLangMenu,
+} from '../store'
 import { encodingLabel } from '../lib/encoding'
 import { t } from '../lib/i18n'
 import { timeHM } from '../lib/format'
 import EncodingMenu from './EncodingMenu.vue'
+import LanguageMenu from './LanguageMenu.vue'
 
 const menuOpen = ref(false)
 
@@ -63,6 +71,17 @@ function onSelect(id: string): void {
       {{ encLabel }}
     </button>
 
+    <!-- 代码语言（着色）：显示当前草稿的语言，点击可手动指定或改为自动检测 -->
+    <button
+      data-testid="lang-btn"
+      class="cursor-pointer rounded px-1.5 py-0.5 text-[11px] transition-colors hover:bg-[var(--surface-2)]"
+      :class="st.langMenuOpen ? 'bg-[var(--surface-2)] text-indigo-600 dark:text-indigo-300' : ''"
+      :title="t('lang.current')"
+      @click="toggleLangMenu()"
+    >
+      {{ langDisplayName() }}
+    </button>
+
     <span
       class="tabular-nums"
       :class="st.quotaWarn ? 'font-semibold text-amber-600 dark:text-amber-400' : ''"
@@ -80,5 +99,7 @@ function onSelect(id: string): void {
       @select="onSelect"
       @close="menuOpen = false"
     />
+
+    <LanguageMenu v-if="st.langMenuOpen" @close="closeLangMenu()" />
   </footer>
 </template>

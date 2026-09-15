@@ -73,6 +73,8 @@ export interface ActionCommand extends CommandBase {
     value: string
     goToLine: (line: number) => void
     openSettings: () => void
+    /** 打开底栏的代码语言（着色）选择菜单 */
+    openLangMenu: () => void
   }) => void
 }
 
@@ -400,6 +402,14 @@ export const COMMANDS: CommandDef[] = [
         ],
       }
     },
+  },
+  {
+    kind: 'action',
+    id: 'nav.langMode',
+    groupKey: G_NAV,
+    titleKey: 'cmd.nav.langMode',
+    keywords: ['language', 'syntax', 'highlight', 'coloring', 'json', '语言', '着色', '高亮', '语法'],
+    run: ({ openLangMenu }) => openLangMenu(),
   },
   {
     kind: 'action',

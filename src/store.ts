@@ -23,6 +23,8 @@ import { commandTitle, findCommand, type TextTarget } from './lib/commands'
 import { normalizeEol } from './lib/textOps'
 import { idbAvailable, idbDelete, idbGet, idbPut } from './lib/idb'
 import { downloadBlob, downloadBytes } from './lib/download'
+import { AUTO_LANG, PLAINTEXT, detectLang } from './lib/languages'
+import { isKnownLang, langLabel } from './lib/langRegistry'
 import {
   DEFAULT_ENCODING,
   countUnmappable,
@@ -40,6 +42,8 @@ export interface DocMeta {
   updatedAt: number
   /** 该草稿用于导出/导入 .txt 的文本编码（缺省视为 UTF-8） */
   encoding?: string
+  /** 代码着色使用的语言（Monaco 语言 id，或 `auto` 表示按内容自动检测；缺省 auto） */
+  lang?: string
   /** 列表中的手动排序位置（越小越靠前；缺失时按 updatedAt 兜底） */
   order?: number
 }
@@ -59,6 +63,7 @@ const SAVE_DEBOUNCE = 400 // 停止输入后多久落盘
 const SNAP_INTERVAL = 20000 // 两次快照最小间隔
 const SNAP_MAX = 40 // 每篇最多快照数
 const SNAP_MAX_CHARS = 600000 // 每篇快照合计字符上限
+const LANG_DETECT_DEBOUNCE = 500 // 自动检测模式下重算语言的节流间隔
 
 /* ---------------- 编辑器桥接（由 MonacoEditor.vue 注册） ---------------- */
 export interface EditorSink {
@@ -139,6 +144,10 @@ export const st = reactive({
   paletteOpen: false,
   /** 设置弹窗 */
   settingsOpen: false,
+  /** 底栏代码语言选择菜单 */
+  langMenuOpen: false,
+  /** 当前草稿实际生效的 Monaco 语言 id（自动检测模式下由内容推断） */
+  resolvedLang: PLAINTEXT,
   /** 外观（背景图片存 IndexedDB，仅把 objectURL 放在内存里） */
   appearance: {
     imageUrl: '',
@@ -184,6 +193,9 @@ export const historyList = computed<Snap[]>(() =>
 )
 /** 当前草稿的文本编码 */
 export const currentEncoding = computed<string>(() => encodingOf(st.currentId))
+
+/** 当前草稿的语言**模式**（可能是 `auto` 自动检测） */
+export const currentLang = computed<string>(() => langOf(st.currentId))
 
 /* ---------------- 存储读写辅助 ---------------- */
 function loadIndex(): Record<string, DocMeta> {
@@ -388,6 +400,7 @@ export function persistNow(force = false): void {
 export function onUserInput(text: string): void {
   setSave('dirty', 'st.saving')
   updateCounts(text)
+  scheduleLangDetect(text)
   clearTimeout(saveTimer)
   saveTimer = setTimeout(() => persistNow(), SAVE_DEBOUNCE)
 }
@@ -451,6 +464,7 @@ export function switchToDoc(id: string, opts?: { keepHash?: boolean }): void {
     commitIndex()
   }
   st.currentId = id
+  st.langMenuOpen = false
   if (!opts?.keepHash) history.replaceState(null, '', '#' + encodeURIComponent(id))
   st.sidebarOpen = false
 }
@@ -805,6 +819,7 @@ export function openPalette(): void {
   st.dialog.open = false
   st.aboutOpen = false
   st.historyOpen = false
+  st.langMenuOpen = false
 }
 export function closePalette(): void {
   st.paletteOpen = false
@@ -888,6 +903,7 @@ export function runCommandById(id: string, arg?: string): void {
         value: arg ?? '',
         goToLine: (line) => sink?.goToLine(line),
         openSettings: () => openSettings(),
+        openLangMenu: () => openLangMenu(),
       })
     } catch (err) {
       showToast(t('cmd.error', { title, msg: String(err) }))
@@ -946,6 +962,7 @@ export function runCommandById(id: string, arg?: string): void {
 
 /* ---------------- 设置弹窗 ---------------- */
 export function openSettings(): void {
+  st.langMenuOpen = false
   st.settingsOpen = true
   st.paletteOpen = false
   st.dialog.open = false
@@ -1087,6 +1104,11 @@ function onKeyDown(e: KeyboardEvent): void {
       closeDialog()
       return
     }
+    if (st.langMenuOpen) {
+      e.preventDefault()
+      closeLangMenu()
+      return
+    }
     if (st.paletteOpen) {
       e.preventDefault()
       closePalette()
@@ -1108,6 +1130,68 @@ function onKeyDown(e: KeyboardEvent): void {
     persistNow()
     showToast(t('toast.noManualSaveAt', { time: timeHM() }))
   }
+}
+
+/* ---------------- 代码着色（语言模式，每篇草稿独立） ---------------- */
+/** 当前草稿的语言模式：Monaco 语言 id，或 `auto` 表示按内容自动检测 */
+export function langOf(id: string | null | undefined): string {
+  const meta = id ? st.index[id] : null
+  const mode = meta?.lang || AUTO_LANG
+  return mode === AUTO_LANG || isKnownLang(mode) ? mode : AUTO_LANG
+}
+
+/** 计算并记录「实际用于着色」的语言（自动检测模式下按正文推断） */
+export function resolveLangFor(id: string | null | undefined, text: string): string {
+  const mode = langOf(id)
+  st.resolvedLang = mode === AUTO_LANG ? detectLang(text) : mode
+  return st.resolvedLang
+}
+
+let langDetectTimer: number | undefined
+/** 自动检测模式下正文变化：节流重算（只在结果真的变了才写回，避免反复清 token 缓存） */
+function scheduleLangDetect(text: string): void {
+  if (langOf(st.currentId) !== AUTO_LANG) return
+  clearTimeout(langDetectTimer)
+  langDetectTimer = window.setTimeout(() => {
+    const next = detectLang(text)
+    if (next !== st.resolvedLang) st.resolvedLang = next
+  }, LANG_DETECT_DEBOUNCE)
+}
+
+/** 语言显示名：纯文本用界面语言文案（Monaco 的别名固定是英文 Plain Text） */
+export function langName(id: string): string {
+  return id === PLAINTEXT ? t('lang.plain') : langLabel(id)
+}
+
+/** 底栏显示用文案：自动检测模式下额外标注实际识别到的语言 */
+export function langDisplayName(): string {
+  const mode = currentLang.value
+  if (mode === AUTO_LANG) return t('lang.autoWith', { lang: langName(st.resolvedLang) })
+  return langName(mode)
+}
+
+/** 切换当前草稿的语言模式（只影响着色，不动正文） */
+export function setCurrentLang(mode: string): void {
+  const id = st.currentId
+  if (!id) return
+  const meta = st.index[id]
+  const next = mode === AUTO_LANG || isKnownLang(mode) ? mode : AUTO_LANG
+  if (meta && meta.lang !== next) {
+    meta.lang = next
+    commitIndex()
+  }
+  resolveLangFor(id, liveText())
+  showToast(t('lang.set', { lang: next === AUTO_LANG ? langDisplayName() : langName(next) }))
+}
+
+export function openLangMenu(): void {
+  st.langMenuOpen = true
+}
+export function closeLangMenu(): void {
+  st.langMenuOpen = false
+}
+export function toggleLangMenu(): void {
+  st.langMenuOpen = !st.langMenuOpen
 }
 
 /* ---------------- 初始化 ---------------- */

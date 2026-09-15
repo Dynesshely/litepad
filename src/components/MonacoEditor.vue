@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as monaco from 'monaco-editor'
+// 0.56 起语言服务的 defaults 从 monaco.languages.* 挪到了顶层导出
+import { css as cssLang, html as htmlLang, json as jsonLang, typescript as tsLang } from 'monaco-editor'
 // 注意：monaco-editor 0.56 的 package exports 会把 `./*` 映射到 `./esm/vs/*.js`，
 // 因此 worker 入口应写作 editor/editor.worker（不要再带 esm/vs 前缀）
 import editorWorker from 'monaco-editor/editor/editor.worker?worker'
@@ -13,6 +15,7 @@ import {
   onUserInput,
   openPalette,
   persistNow,
+  resolveLangFor,
   showToast,
 } from '../store'
 import { locale, t } from '../lib/i18n'
@@ -31,9 +34,48 @@ function ensureWorker(): void {
   if (workerReady) return
   workerReady = true
   window.MonacoEnvironment = {
-    // 纯文本场景只需要 editor worker；其余 label 同样回退到它，避免告警
+    // 只需要 editor worker：语法着色走 Monarch 词法，不需要语言服务 worker
     getWorker: () => new editorWorker(),
   }
+  disableLanguageServices()
+}
+
+/**
+ * 关掉 Monaco 自带的语言服务（json / css / html / typescript）。
+ *
+ * 原因是这些服务各自需要专属 worker，而我们只注册了 editor worker：
+ * 一旦被触发（hover、补全、诊断、inlay hints…），协议消息会打到 editor worker 上，
+ * 抛出 `Missing requestHandler or method: getSyntacticDiagnostics` 这类未捕获错误。
+ * 关掉之后只剩语法着色 —— 这正是 Litepad 要的：彩色显示，不做 IDE。
+ */
+const off = {
+  completionItems: false,
+  hovers: false,
+  documentSymbols: false,
+  definitions: false,
+  references: false,
+  documentHighlights: false,
+  rename: false,
+  diagnostics: false,
+  documentFormattingEdits: false,
+  documentRangeFormattingEdits: false,
+  signatureHelp: false,
+  onTypeFormattingEdits: false,
+  codeActions: false,
+  inlayHints: false,
+  links: false,
+  colors: false,
+  foldingRanges: false,
+  selectionRanges: false,
+}
+function disableLanguageServices(): void {
+  tsLang.typescriptDefaults.setModeConfiguration(off)
+  tsLang.javascriptDefaults.setModeConfiguration(off)
+  jsonLang.jsonDefaults.setDiagnosticsOptions({ validate: false, allowComments: true })
+  jsonLang.jsonDefaults.setModeConfiguration(off)
+  cssLang.cssDefaults.setDiagnosticsOptions({ validate: false })
+  cssLang.cssDefaults.setModeConfiguration(off)
+  htmlLang.htmlDefaults.setModeConfiguration(off)
 }
 
 onMounted(() => {
@@ -41,7 +83,8 @@ onMounted(() => {
   const id = st.currentId
   const initial = contentOf(id)
 
-  model = monaco.editor.createModel(initial, 'plaintext')
+  // 语言模式按草稿独立保存；`auto` 时由正文内容推断（见 lib/languages.ts）
+  model = monaco.editor.createModel(initial, resolveLangFor(id, initial))
   editor = monaco.editor.create(host.value!, {
     model,
     theme: st.dark ? 'vs-dark' : 'vs',
@@ -168,6 +211,14 @@ onMounted(() => {
 watch(
   () => st.dark,
   (dark) => monaco.editor.setTheme(dark ? 'vs-dark' : 'vs'),
+)
+
+// 语言变化（手动切换，或自动检测模式下内容变化导致重判）→ 让 Monaco 重新着色
+watch(
+  () => st.resolvedLang,
+  (lang) => {
+    if (model && model.getLanguageId() !== lang) monaco.editor.setModelLanguage(model, lang)
+  },
 )
 
 // 切换语言时同步占位符文案

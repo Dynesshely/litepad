@@ -15,6 +15,7 @@ import {
 import { fmtRel } from '../lib/format'
 import { encodingLabel } from '../lib/encoding'
 import { t } from '../lib/i18n'
+import { ArrowUpDown, GripVertical, Pin, PinOff, Plus, Trash2, X } from '@lucide/vue'
 
 const props = defineProps<{ mode: 'docked' | 'overlay' }>()
 
@@ -102,7 +103,7 @@ function onRowClick(id: string): void {
           :aria-label="t('list.newAria')"
           @click="onNew()"
         >
-          ＋
+          <Plus class="h-4 w-4" aria-hidden="true" />
         </button>
         <button
           data-testid="sort-recent"
@@ -110,6 +111,7 @@ function onRowClick(id: string): void {
           :title="t('list.sortRecentTitle')"
           @click="sortDocsByRecent()"
         >
+          <ArrowUpDown class="h-3.5 w-3.5" aria-hidden="true" />
           {{ t('list.sortRecent') }}
         </button>
         <button
@@ -120,7 +122,7 @@ function onRowClick(id: string): void {
           :aria-label="t('list.pinAria')"
           @click="pinSidebar()"
         >
-          📌
+          <Pin class="h-4 w-4" aria-hidden="true" />
         </button>
         <button
           v-else
@@ -130,7 +132,7 @@ function onRowClick(id: string): void {
           :aria-label="t('list.unpinAria')"
           @click="unpinSidebar()"
         >
-          📌
+          <PinOff class="h-4 w-4" aria-hidden="true" />
         </button>
         <button
           v-if="mode === 'overlay'"
@@ -138,7 +140,7 @@ function onRowClick(id: string): void {
           :title="t('list.closeTitle')"
           @click="closeSidebar()"
         >
-          ✕
+          <X class="h-4 w-4" aria-hidden="true" />
         </button>
       </span>
     </div>
@@ -173,7 +175,7 @@ function onRowClick(id: string): void {
           class="shrink-0 cursor-grab text-[11px] text-zinc-300 opacity-0 transition-opacity group-hover:opacity-100 dark:text-zinc-600"
           :title="t('list.dragTitle')"
         >
-          ⠿
+          <GripVertical class="h-3.5 w-3.5" aria-hidden="true" />
         </span>
         <span class="min-w-0 flex-1">
           <span
@@ -193,7 +195,7 @@ function onRowClick(id: string): void {
           :title="t('list.deleteTitle')"
           @click.stop="deleteDoc(d.id)"
         >
-          🗑
+          <Trash2 class="h-3.5 w-3.5" aria-hidden="true" />
         </button>
       </li>
     </ul>

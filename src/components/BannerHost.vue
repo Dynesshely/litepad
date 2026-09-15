@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { dismissBanner, st } from '../store'
 import { t } from '../lib/i18n'
+import { CircleAlert, Info, TriangleAlert, X } from '@lucide/vue'
 
 const cls = computed(() => {
   switch (st.banner?.kind) {
@@ -21,13 +22,16 @@ const cls = computed(() => {
     class="flex items-start gap-2 border-b px-3 py-1.5 text-xs"
     :class="cls"
   >
+    <TriangleAlert v-if="st.banner.kind === 'warn'" class="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+    <CircleAlert v-else-if="st.banner.kind === 'error'" class="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+    <Info v-else class="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
     <span class="flex-1 whitespace-pre-wrap break-words">{{ st.banner.msg }}</span>
     <button
       class="cursor-pointer rounded px-1 text-sm font-bold leading-none opacity-70 transition-opacity hover:opacity-100"
       :title="t('banner.dismiss')"
       @click="dismissBanner()"
     >
-      ✕
+      <X class="h-3.5 w-3.5" aria-hidden="true" />
     </button>
   </div>
 </template>

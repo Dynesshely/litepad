@@ -1,6 +1,19 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import {
+  Command,
+  DatabaseBackup,
+  Download,
+  FilePlus2,
+  FolderOpen,
+  History,
+  Languages,
+  Moon,
+  PanelLeft,
+  Sun,
+  Undo2,
+} from '@lucide/vue'
+import {
   st,
   backupAll,
   changeLocale,
@@ -47,7 +60,10 @@ function onLocale(id: string): void {
       {{ t('app.title') }}
     </button>
 
-    <button class="btn" :title="t('tb.newTitle')" @click="createNewDoc()">{{ t('tb.new') }}</button>
+    <button class="btn" :title="t('tb.newTitle')" @click="createNewDoc()">
+      <FilePlus2 class="h-3.5 w-3.5" aria-hidden="true" />
+      {{ t('tb.new') }}
+    </button>
     <button
       data-testid="list-toggle"
       class="btn"
@@ -55,12 +71,15 @@ function onLocale(id: string): void {
       :title="st.sidebarPinned ? t('tb.docsPinnedTitle') : t('tb.docsTitle')"
       @click="toggleSidebar()"
     >
+      <PanelLeft class="h-3.5 w-3.5" aria-hidden="true" />
       {{ st.sidebarPinned ? t('tb.docsPinned') : t('tb.docs') }}
     </button>
     <button class="btn" :disabled="!st.currentId" :title="t('tb.historyTitle')" @click="openHistory()">
+      <History class="h-3.5 w-3.5" aria-hidden="true" />
       {{ t('tb.history') }}
     </button>
     <button class="btn" :disabled="!st.currentId" :title="t('tb.undoTitle')" @click="undoOneStep()">
+      <Undo2 class="h-3.5 w-3.5" aria-hidden="true" />
       {{ t('tb.undo') }}
     </button>
     <button
@@ -70,40 +89,45 @@ function onLocale(id: string): void {
       :title="t('cmd.openHint')"
       @click="openPalette()"
     >
-      ⌨ {{ t('cmd.open') }}
+      <Command class="h-3.5 w-3.5" aria-hidden="true" />
+      {{ t('cmd.open') }}
     </button>
 
     <span class="mx-1 hidden h-4 w-px bg-zinc-200 sm:block dark:bg-zinc-700"></span>
 
     <button class="btn" :disabled="!st.currentId" :title="t('tb.exportTitle')" @click="exportCurrentTxt()">
+      <Download class="h-3.5 w-3.5" aria-hidden="true" />
       {{ t('tb.export') }}
     </button>
-    <button class="btn" :title="t('tb.backupTitle')" @click="backupAll()">{{ t('tb.backup') }}</button>
-    <button class="btn" :title="t('tb.importTitle')" @click="fileInput?.click()">{{ t('tb.import') }}</button>
+    <button class="btn" :title="t('tb.backupTitle')" @click="backupAll()">
+      <DatabaseBackup class="h-3.5 w-3.5" aria-hidden="true" />
+      {{ t('tb.backup') }}
+    </button>
+    <button class="btn" :title="t('tb.importTitle')" @click="fileInput?.click()">
+      <FolderOpen class="h-3.5 w-3.5" aria-hidden="true" />
+      {{ t('tb.import') }}
+    </button>
     <input ref="fileInput" type="file" accept=".json,application/json" class="hidden" @change="onFile" />
 
     <div class="flex-1"></div>
 
     <!-- 语言切换：紧邻主题切换按钮的左侧 -->
     <div class="relative">
-      <button
-        data-testid="locale-btn"
-        class="btn"
-        :title="t('tb.lang')"
-        @click="langOpen = !langOpen"
-      >
-        🌐 {{ localeShort() }}
+      <button data-testid="locale-btn" class="btn" :title="t('tb.lang')" @click="langOpen = !langOpen">
+        <Languages class="h-3.5 w-3.5" aria-hidden="true" />
+        {{ localeShort() }}
       </button>
       <LocaleMenu v-if="langOpen" :current="locale" @select="onLocale" @close="langOpen = false" />
     </div>
 
     <button
       data-testid="theme-btn"
-      class="btn"
+      class="btn btn-icon"
       :title="st.dark ? t('tb.themeToLight') : t('tb.themeToDark')"
       @click="toggleDark()"
     >
-      {{ st.dark ? '☀️' : '🌙' }}
+      <Sun v-if="st.dark" class="h-4 w-4" aria-hidden="true" />
+      <Moon v-else class="h-4 w-4" aria-hidden="true" />
     </button>
   </header>
 </template>

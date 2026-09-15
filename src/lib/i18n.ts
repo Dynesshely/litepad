@@ -31,21 +31,21 @@ const messages: Record<LocaleId, Record<string, string>> = {
     'app.docTitle': '{title} — Litepad',
     'doc.untitled': '未命名',
 
-    'tb.new': '＋ 新建',
+    'tb.new': '新建',
     'tb.newTitle': '新开一篇独立草稿（也可以直接新开浏览器标签）',
-    'tb.docs': '📄 草稿列表',
-    'tb.docsPinned': '📄 草稿列表 · 已固定',
+    'tb.docs': '草稿列表',
+    'tb.docsPinned': '草稿列表 · 已固定',
     'tb.docsTitle': '查看 / 管理所有草稿（可在面板里固定到左侧常驻）',
     'tb.docsPinnedTitle': '取消固定：草稿列表回到浮层抽屉',
-    'tb.history': '🕘 历史快照',
+    'tb.history': '历史快照',
     'tb.historyTitle': '当前草稿的历史快照，可恢复到几分钟前',
-    'tb.undo': '↩ 回退一步',
+    'tb.undo': '回退一步',
     'tb.undoTitle': '把内容换回上一次自动保存的版本（再点一次可换回）',
-    'tb.export': '⬇ 导出 .txt',
+    'tb.export': '导出 .txt',
     'tb.exportTitle': '把当前草稿按当前编码另存为 .txt 文件',
-    'tb.backup': '💾 备份全部',
+    'tb.backup': '备份全部',
     'tb.backupTitle': '把全部草稿（含编码设置）打包成 JSON 备份文件',
-    'tb.import': '📂 导入备份',
+    'tb.import': '导入备份',
     'tb.importTitle': '从 JSON 备份文件合并导入草稿',
     'tb.themeToDark': '切换到深色模式',
     'tb.themeToLight': '切换到浅色模式',
@@ -61,13 +61,13 @@ const messages: Record<LocaleId, Record<string, string>> = {
     'st.undone': '已回退，可再点一次换回',
     'st.chars': '{chars} 字符 · {lines} 行',
     'st.quota': '本页源占用 {size}',
-    'st.quotaFull': '本页源占用 {size} ⚠ 接近 5MB 上限，建议导出备份并清理',
+    'st.quotaFull': '本页源占用 {size}（接近 5MB 上限，建议导出备份并清理）',
 
     'list.title': '我的草稿',
-    'list.new': '＋ 新建',
+    'list.new': '新建',
     'list.newAria': '新建草稿',
-    'list.pin': '📌 固定',
-    'list.pinned': '📌 已固定',
+    'list.pin': '固定',
+    'list.pinned': '已固定',
     'list.pinAria': '固定草稿列表到左侧',
     'list.unpinAria': '取消固定草稿列表',
     'list.pinTitle': '固定到左侧，作为全高常驻面板',
@@ -76,15 +76,15 @@ const messages: Record<LocaleId, Record<string, string>> = {
     'list.empty': '还没有草稿。直接输入即可自动创建。',
     'list.deleteTitle': '删除这篇草稿',
     'list.dragTitle': '按住可拖动调整顺序',
-    'list.sortRecent': '⇅ 最近更新',
+    'list.sortRecent': '最近更新',
     'list.sortRecentTitle': '按最近更新时间重新排序',
     'list.moved': '已保存新的草稿顺序',
     'list.reordered': '已按最近更新重排',
     'list.footerDocked': '已固定常驻；新开浏览器标签打开本应用即为另一篇独立草稿。',
-    'list.footerOverlay': '提示：新开浏览器标签打开本应用就是另一篇独立草稿；点「📌 固定」可常驻左侧。',
+    'list.footerOverlay': '提示：新开浏览器标签打开本应用就是另一篇独立草稿；点「固定」可常驻左侧。',
 
-    'hist.title': '🕘 历史快照',
-    'hist.close': '✕ 关闭',
+    'hist.title': '历史快照',
+    'hist.close': '关闭',
     'hist.hint':
       '输入过程中每隔约 20 秒自动留一份快照（最多 40 份）。点击时间即可把编辑区恢复到该版本；当前内容会自动转入「回退一步」的重做位。',
     'hist.chars': '{n} 字符',
@@ -92,7 +92,7 @@ const messages: Record<LocaleId, Record<string, string>> = {
     'hist.empty': '暂无快照 —— 输入内容后会自动开始记录。',
 
     'enc.current': '当前草稿的文本编码',
-    'enc.import': '📥 按当前编码导入 .txt 文件…',
+    'enc.import': '按当前编码导入 .txt 文件…',
     'enc.note':
       '编码只作用于「导出 / 导入 .txt」的字节解读，编辑器内部始终按字符处理，切换编码不会改动正文。文件自带 BOM 时自动识别；绿色勾为当前草稿所用编码。',
     'enc.group.unicode': 'Unicode',
@@ -108,7 +108,7 @@ const messages: Record<LocaleId, Record<string, string>> = {
     'enc.exportedWarn': '；{n} 个字符无法用 {enc} 表示，已写成 ?',
     'enc.exportEmpty': '当前草稿为空，没有可导出的内容',
     'enc.importConfirm':
-      '按 {enc} 解读「{file}」（{size} 字节）并替换当前草稿内容？\n当前内容可用「↩ 回退一步」找回。',
+      '按 {enc} 解读「{file}」（{size} 字节）并替换当前草稿内容？\n当前内容可用「回退一步」找回。',
     'enc.imported': '已按 {enc} 导入 {file}{bom}，共 {chars} 字符',
     'enc.importedBom': '（检测到 BOM）',
     'enc.importFailed': '导入失败：无法读取该文件',
@@ -131,13 +131,13 @@ const messages: Record<LocaleId, Record<string, string>> = {
 
     'banner.dismiss': '关闭提示',
     'banner.noStorage':
-      '⚠ 此浏览器当前不允许持久化存储（localStorage 不可用，常见于部分隐私模式或受限环境）。内容仍会自动保存，但只在本页会话内有效，关闭页面即丢失。请尽快「备份全部」到本地文件。',    'banner.fileHint':
+      '此浏览器当前不允许持久化存储（localStorage 不可用，常见于部分隐私模式或受限环境）。内容仍会自动保存，但只在本页会话内有效，关闭页面即丢失。请尽快「备份全部」到本地文件。',    'banner.fileHint':
       '已开启自动保存。首次使用请自测：输入几行文字 → 按 F5 刷新 → 内容应原样保留。若刷新后变空，说明该浏览器在 file:// 打开方式下不持久化 localStorage，请改用本地 http 服务打开（如 npm run dev / npm run preview）。',
     'banner.degraded':
-      '⚠ localStorage 不可用或已写满，内容目前只暂存在浏览器会话中（关闭窗口会丢失）。请「备份全部」导出，或到草稿列表删除旧草稿释放空间。',
+      'localStorage 不可用或已写满，内容目前只暂存在浏览器会话中（关闭窗口会丢失）。请「备份全部」导出，或到草稿列表删除旧草稿释放空间。',
 
     'monaco.placeholder':
-      '在这里开始输入……\n\n内容会自动保存到本浏览器的 localStorage：无需 Ctrl+S、无需任何手动保存，直接关闭标签页、刷新都不丢。\n\n· Ctrl+S 已被拦截（你不需要保存文件）\n· 想再开一篇临时稿：点「＋ 新建」或新开一个浏览器标签打开本页\n· 担心手滑删光？「🕘 历史快照」和「↩ 回退一步」可以救回来',
+      '在这里开始输入……\n\n内容会自动保存到本浏览器的 localStorage：无需 Ctrl+S、无需任何手动保存，直接关闭标签页、刷新都不丢。\n\n· Ctrl+S 已被拦截（你不需要保存文件）\n· Ctrl/⌘+Shift+P 或 F1 打开命令菜单：排序、去重、Base64、JSON 美化等\n· 想再开一篇临时稿：点「新建」或新开一个浏览器标签打开本页\n· 担心手滑删光？「历史快照」和「回退一步」可以救回来',
 
     'time.justNow': '刚刚',
     'time.minutesAgo': '{n} 分钟前',
@@ -243,21 +243,21 @@ const messages: Record<LocaleId, Record<string, string>> = {
     'app.docTitle': '{title} — Litepad',
     'doc.untitled': 'Untitled',
 
-    'tb.new': '＋ New',
+    'tb.new': 'New',
     'tb.newTitle': 'Create another independent draft (or just open this app in a new tab)',
-    'tb.docs': '📄 Drafts',
-    'tb.docsPinned': '📄 Drafts · Pinned',
+    'tb.docs': 'Drafts',
+    'tb.docsPinned': 'Drafts · Pinned',
     'tb.docsTitle': 'Browse / manage all drafts (pin the list to the left to keep it visible)',
     'tb.docsPinnedTitle': 'Unpin: put the draft list back into a drawer',
-    'tb.history': '🕘 History',
+    'tb.history': 'History',
     'tb.historyTitle': 'Snapshots of this draft — restore a version from minutes ago',
-    'tb.undo': '↩ Undo step',
+    'tb.undo': 'Undo step',
     'tb.undoTitle': 'Swap back to the previously autosaved version (click again to swap back)',
-    'tb.export': '⬇ Export .txt',
+    'tb.export': 'Export .txt',
     'tb.exportTitle': 'Save this draft as a .txt file using its encoding',
-    'tb.backup': '💾 Back up all',
+    'tb.backup': 'Back up all',
     'tb.backupTitle': 'Export every draft (including encodings) as a JSON backup',
-    'tb.import': '📂 Import backup',
+    'tb.import': 'Import backup',
     'tb.importTitle': 'Merge drafts from a JSON backup file',
     'tb.themeToDark': 'Switch to dark mode',
     'tb.themeToLight': 'Switch to light mode',
@@ -273,13 +273,13 @@ const messages: Record<LocaleId, Record<string, string>> = {
     'st.undone': 'Rolled back — click again to redo',
     'st.chars': '{chars} chars · {lines} lines',
     'st.quota': 'This origin: {size}',
-    'st.quotaFull': 'This origin: {size} ⚠ near the 5 MB limit — export a backup and clean up',
+    'st.quotaFull': 'This origin: {size} (near the 5 MB limit — export a backup and clean up)',
 
     'list.title': 'My drafts',
-    'list.new': '＋ New',
+    'list.new': 'New',
     'list.newAria': 'New draft',
-    'list.pin': '📌 Pin',
-    'list.pinned': '📌 Pinned',
+    'list.pin': 'Pin',
+    'list.pinned': 'Pinned',
     'list.pinAria': 'Pin the draft list to the left',
     'list.unpinAria': 'Unpin the draft list',
     'list.pinTitle': 'Pin to the left as a full-height panel',
@@ -288,16 +288,16 @@ const messages: Record<LocaleId, Record<string, string>> = {
     'list.empty': 'No drafts yet — just start typing and one is created automatically.',
     'list.deleteTitle': 'Delete this draft',
     'list.dragTitle': 'Drag to reorder',
-    'list.sortRecent': '⇅ Recent',
+    'list.sortRecent': 'Recent',
     'list.sortRecentTitle': 'Reorder by last modified time',
     'list.moved': 'New draft order saved',
     'list.reordered': 'Reordered by last modified',
     'list.footerDocked': 'Pinned. Open this app in another browser tab for another independent draft.',
     'list.footerOverlay':
-      'Tip: a new browser tab gives you another independent draft; click “📌 Pin” to keep this list docked.',
+      'Tip: a new browser tab gives you another independent draft; click “Pin” to keep this list docked.',
 
-    'hist.title': '🕘 History',
-    'hist.close': '✕ Close',
+    'hist.title': 'History',
+    'hist.close': 'Close',
     'hist.hint':
       'A snapshot is taken about every 20 seconds while typing (up to 40). Click a time to restore the editor to that version; the current content moves into the “Undo step” redo slot.',
     'hist.chars': '{n} chars',
@@ -305,7 +305,7 @@ const messages: Record<LocaleId, Record<string, string>> = {
     'hist.empty': 'No snapshots yet — recording starts as soon as you type.',
 
     'enc.current': 'Text encoding of this draft',
-    'enc.import': '📥 Import a .txt using this encoding…',
+    'enc.import': 'Import a .txt using this encoding…',
     'enc.note':
       'Encoding affects only the bytes when exporting / importing .txt; the editor always works with characters, so switching encoding never changes the text. A leading BOM is detected automatically; the green check marks the current encoding.',
     'enc.group.unicode': 'Unicode',
@@ -321,7 +321,7 @@ const messages: Record<LocaleId, Record<string, string>> = {
     'enc.exportedWarn': '; {n} characters cannot be represented in {enc} and were written as ?',
     'enc.exportEmpty': 'This draft is empty — nothing to export',
     'enc.importConfirm':
-      'Interpret “{file}” as {enc} ({size} bytes) and replace the current draft?\nThe current content can be recovered with “↩ Undo step”.',
+      'Interpret “{file}” as {enc} ({size} bytes) and replace the current draft?\nThe current content can be recovered with “Undo step”.',
     'enc.imported': 'Imported {file} as {enc}{bom} — {chars} characters',
     'enc.importedBom': ' (BOM detected)',
     'enc.importFailed': 'Import failed: cannot read this file',
@@ -345,14 +345,14 @@ const messages: Record<LocaleId, Record<string, string>> = {
 
     'banner.dismiss': 'Dismiss',
     'banner.noStorage':
-      '⚠ This browser does not allow persistent storage (localStorage is unavailable — common in some private-mode or restricted environments). Content is still autosaved, but only for this page session: closing the page loses it. Please “💾 Back up all” to a local file soon.',
+      'This browser does not allow persistent storage (localStorage is unavailable — common in some private-mode or restricted environments). Content is still autosaved, but only for this page session: closing the page loses it. Please “Back up all” to a local file soon.',
     'banner.fileHint':
       'Autosave is on. Please self-test once: type a few lines → press F5 → the content should still be there. If it disappears, this browser does not persist localStorage for file:// pages — serve the app over http instead (e.g. npm run dev / npm run preview).',
     'banner.degraded':
-      '⚠ localStorage is unavailable or full, so content is only kept for this browser session (lost when the window closes). Use “💾 Back up all”, or delete old drafts to free space.',
+      'localStorage is unavailable or full, so content is only kept for this browser session (lost when the window closes). Use “Back up all”, or delete old drafts to free space.',
 
     'monaco.placeholder':
-      'Start typing…\n\nEverything is autosaved to this browser’s localStorage: no Ctrl+S, no save dialogs — closing the tab or reloading is safe.\n\n· Ctrl+S is intercepted (you never need to save a file)\n· Need another scratch draft? Click “＋ New” or open this app in a new tab\n· Deleted something by accident? “🕘 History” and “↩ Undo step” can bring it back',
+      'Start typing…\n\nEverything is autosaved to this browser’s localStorage: no Ctrl+S, no save dialogs — closing the tab or reloading is safe.\n\n· Ctrl+S is intercepted (you never need to save a file)\n· Ctrl/⌘+Shift+P or F1 opens the command palette: sort, dedupe, Base64, JSON, …\n· Need another scratch draft? Click “New” or open this app in a new tab\n· Deleted something by accident? “History” and “Undo step” can bring it back',
 
     'time.justNow': 'just now',
     'time.minutesAgo': '{n} min ago',

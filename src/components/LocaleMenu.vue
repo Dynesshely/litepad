@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { LOCALES } from '../lib/i18n'
+import { Check } from '@lucide/vue'
 
 defineProps<{ current: string }>()
 const emit = defineEmits<{
@@ -34,7 +35,7 @@ function pick(id: string): void {
       @click="pick(l.id)"
     >
       <span>{{ l.label }}</span>
-      <span v-if="l.id === current" class="text-indigo-500">✓</span>
+      <Check v-if="l.id === current" class="h-3.5 w-3.5 text-indigo-500" aria-hidden="true" />
     </button>
   </div>
 </template>

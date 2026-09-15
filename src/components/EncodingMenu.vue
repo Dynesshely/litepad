@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { encodingLabel, groupedEncodings, isDecodable } from '../lib/encoding'
 import { t } from '../lib/i18n'
+import { Check, Import } from '@lucide/vue'
 import { importTextFile, showToast } from '../store'
 
 defineProps<{ current: string }>()
@@ -63,7 +64,7 @@ function onFile(e: Event): void {
         </span>
         <span class="flex items-center gap-1.5 text-[10px] text-zinc-400 dark:text-zinc-500">
           <span v-if="e.hintKey">{{ t(e.hintKey) }}</span>
-          <span v-if="e.id === current" class="text-indigo-500">✓</span>
+          <Check v-if="e.id === current" class="h-3.5 w-3.5 text-indigo-500" aria-hidden="true" />
         </span>
       </button>
     </template>
@@ -72,9 +73,10 @@ function onFile(e: Event): void {
 
     <button
       data-testid="enc-import"
-      class="w-full cursor-pointer rounded px-2 py-1 text-left text-xs text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800"
+      class="flex w-full cursor-pointer items-center gap-1.5 rounded px-2 py-1 text-left text-xs text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800"
       @click="fileInput?.click()"
     >
+      <Import class="h-3.5 w-3.5" aria-hidden="true" />
       {{ t('enc.import') }}
     </button>
     <input

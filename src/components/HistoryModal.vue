@@ -2,6 +2,7 @@
 import { st, closeHistory, historyList, restoreSnapshot } from '../store'
 import { fmtFull } from '../lib/format'
 import { t } from '../lib/i18n'
+import { History, X } from '@lucide/vue'
 
 const rows = historyList
 </script>
@@ -19,8 +20,14 @@ const rows = historyList
         <header
           class="flex items-center justify-between border-b border-zinc-200 px-4 py-2.5 dark:border-zinc-800"
         >
-          <span class="text-sm font-semibold text-zinc-800 dark:text-zinc-100">{{ t('hist.title') }}</span>
-          <button class="btn" @click="closeHistory()">{{ t('hist.close') }}</button>
+          <span class="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+            <History class="h-4 w-4" aria-hidden="true" />
+            {{ t('hist.title') }}
+          </span>
+          <button class="btn" @click="closeHistory()">
+            <X class="h-3.5 w-3.5" aria-hidden="true" />
+            {{ t('hist.close') }}
+          </button>
         </header>
 
         <p class="border-b border-zinc-100 px-4 py-2 text-xs leading-5 text-zinc-400 dark:border-zinc-800 dark:text-zinc-500">

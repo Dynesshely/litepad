@@ -7,6 +7,7 @@ import { computed, onBeforeUnmount, onMounted } from 'vue'
 import { closeAbout, currentMeta, docs, showToast, st } from '../store'
 import { encodingLabel } from '../lib/encoding'
 import { locale, localeLabel, t } from '../lib/i18n'
+import { Copy } from '@lucide/vue'
 import BrandLogo from './BrandLogo.vue'
 
 const version = __APP_VERSION__
@@ -123,6 +124,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 
           <div class="flex items-center justify-end gap-2 border-t border-zinc-200 px-4 py-3 dark:border-zinc-800">
             <button data-testid="about-copy" class="btn" @click="copyDiagnostics()">
+              <Copy class="h-3.5 w-3.5" aria-hidden="true" />
               {{ t('about.copy') }}
             </button>
             <button data-testid="about-close" class="btn" @click="closeAbout()">

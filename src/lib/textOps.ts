@@ -201,7 +201,9 @@ export function jsonUnescape(text: string): string {
 /* ---------------- 其它 ---------------- */
 
 export function reverseChars(text: string): string {
-  return Array.from(text).reverse().join('')
+  const reversed = Array.from(text).reverse().join('')
+  // 反转会把 CRLF 拆成 LF CR，这里修复回来，保持原文档的换行风格
+  return reversed.replace(/\n\r/g, '\r\n')
 }
 
 export interface TextStats {
@@ -213,11 +215,12 @@ export interface TextStats {
 }
 
 export function textStats(text: string): TextStats {
+  // 字符/词/行按归一化后的文本统计（换行符不该被算作「字符」），字节数按原始文本（真实体积）
   const normalized = normalizeEol(text)
   return {
-    chars: Array.from(text).length,
-    charsNoSpaces: Array.from(text.replace(/\s/g, '')).length,
-    words: (text.match(/\S+/g) ?? []).length,
+    chars: Array.from(normalized).length,
+    charsNoSpaces: Array.from(normalized.replace(/\s/g, '')).length,
+    words: (normalized.match(/\S+/g) ?? []).length,
     lines: normalized.length ? normalized.split('\n').length : 0,
     bytes: new TextEncoder().encode(text).length,
   }

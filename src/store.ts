@@ -20,6 +20,7 @@ import {
 } from './lib/storage'
 import { fmtFull, fmtRel, fmtStamp, timeHM, titleOf, safeName } from './lib/format'
 import { commandTitle, findCommand, type TextTarget } from './lib/commands'
+import { normalizeEol } from './lib/textOps'
 import { downloadBlob, downloadBytes } from './lib/download'
 import {
   DEFAULT_ENCODING,
@@ -249,8 +250,10 @@ export function contentOf(id: string | null | undefined): string {
 
 /* ---------------- 计数 / 标题 ---------------- */
 function updateCounts(text: string): void {
-  st.chars = text.length
-  st.lines = text ? text.split('\n').length : 0
+  // 归一化换行后再统计，避免 CRLF 文本把 \r 也计入字符数
+  const normalized = normalizeEol(text)
+  st.chars = normalized.length
+  st.lines = normalized ? normalized.split('\n').length : 0
 }
 function updateTitle(): void {
   const meta = st.currentId ? st.index[st.currentId] : null
@@ -861,7 +864,12 @@ export function runCommandById(id: string, arg?: string): void {
 
   const pick = (): { start: number; end: number; text: string } => {
     if (def.scope === 'whole') return { start: 0, end: target.full.length, text: target.full }
-    if (def.scope === 'lines') return { start: target.lineStart, end: target.lineEnd, text: target.lineText }
+    if (def.scope === 'lines') {
+      // 无选区时作用于整篇：否则「删除空行 / 排序 / 去重」这类命令只处理光标所在的一行，看起来无效
+      return target.hasSelection
+        ? { start: target.lineStart, end: target.lineEnd, text: target.lineText }
+        : { start: 0, end: target.full.length, text: target.full }
+    }
     return target.hasSelection
       ? { start: target.selectionStart, end: target.selectionEnd, text: target.selected }
       : { start: 0, end: target.full.length, text: target.full }

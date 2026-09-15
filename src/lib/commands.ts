@@ -10,7 +10,14 @@ import { t } from './i18n'
 import * as ops from './textOps'
 
 export type CommandKind = 'transform' | 'info' | 'action'
-/** 作用范围：auto = 有选区就作用于选区，否则全文；lines = 选区覆盖的整行；whole = 始终全文 */
+/**
+ * 作用范围：
+ * - `auto`  ：有选区就作用于选区，否则全文
+ * - `lines` ：有选区就作用于**选区覆盖的整行**；无选区则作用于**整篇**
+ *             （对齐 VSCode：行排序/去重/删除空行等在无选区时处理整个文档，
+ *              否则只处理光标所在的一行会表现为「点了没反应」）
+ * - `whole` ：始终全文
+ */
 export type CommandScope = 'auto' | 'lines' | 'whole'
 
 /** 编辑器当前状态快照（由 store 注入） */

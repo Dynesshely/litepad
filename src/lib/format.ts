@@ -1,4 +1,5 @@
 import { t } from './i18n'
+import { normalizeEol } from './textOps'
 
 export const pad2 = (n: number): string => (n < 10 ? '0' + n : String(n))
 
@@ -28,7 +29,7 @@ export function fmtRel(ts: number): string {
 
 /** 标题 = 首个非空行（截断到 40 字） */
 export function titleOf(text: string): string {
-  const lines = String(text).split('\n')
+  const lines = normalizeEol(String(text)).split('\n')
   for (const raw of lines) {
     const line = raw.trim()
     if (line) return line.length > 40 ? line.slice(0, 40) + '…' : line

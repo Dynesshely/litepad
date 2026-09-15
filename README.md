@@ -92,6 +92,19 @@ litepad/
 - 版本号与构建号由 `vite.config.ts` 的 `define` 在构建期注入（`__APP_VERSION__` 取自 `package.json`，`__APP_BUILD__` 取 `git rev-parse --short HEAD`，非 git 环境回退为 `dev`）；
 - 「复制诊断信息」写出：版本/构建号、语言与主题、草稿数量与当前草稿字符数、本页占用、User-Agent；剪贴板不可用时回退到 `execCommand`。
 
+## 图标（Lucide）
+
+界面图标统一使用 **[Lucide](https://lucide.dev)**（`@lucide/vue`，**ISC 许可**，免费开源，3600+ 图标），
+不再使用 emoji —— emoji 在不同系统/字体下字形与尺寸不一致，也无法随深浅色主题变色：
+
+- 图标以 Vue 组件按需引入（tree-shaking，只打包用到的那些），尺寸用 Tailwind 类控制（工具栏 `h-3.5 w-3.5`）；
+- 一律 `aria-hidden="true"`，可访问名称由按钮的 `title` / `aria-label` 提供；
+- 单色图标继承 `currentColor`，因此深色模式、悬停态自动跟随；
+- i18n 文案里**不再带 emoji 前缀**（例如「📄 草稿列表」→「草稿列表」），图标由模板负责。
+
+> 依赖安装提示：本机 `HTTP(S)_PROXY` 指向的代理若不可达，可临时绕过：
+> `env -u HTTP_PROXY -u HTTPS_PROXY npm install <pkg>`。
+
 ## 命令菜单（命令面板）
 
 仿 VSCode 的命令面板：**Ctrl/⌘+Shift+P** 或 **F1** 唤起（编辑器聚焦、焦点在别处均可），工具栏也有「⌨ 命令菜单」入口。

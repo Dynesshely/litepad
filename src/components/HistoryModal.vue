@@ -15,7 +15,7 @@ const rows = historyList
       @click.self="closeHistory()"
     >
       <div
-        class="flex max-h-[78vh] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-900"
+        class="flex max-h-[78vh] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-zinc-200 bg-[var(--surface)] shadow-2xl dark:border-zinc-700"
       >
         <header
           class="flex items-center justify-between border-b border-zinc-200 px-4 py-2.5 dark:border-zinc-800"
@@ -38,7 +38,7 @@ const rows = historyList
           <li
             v-for="s in [...rows].reverse()"
             :key="s.t"
-            class="mb-0.5 flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            class="mb-0.5 flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-[var(--surface-2)]"
           >
             <span class="min-w-[150px] font-mono text-xs tabular-nums text-zinc-600 dark:text-zinc-300">
               {{ fmtFull(s.t) }}

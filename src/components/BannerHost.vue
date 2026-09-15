@@ -11,7 +11,7 @@ const cls = computed(() => {
     case 'error':
       return 'border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300'
     default:
-      return 'border-zinc-200 bg-zinc-100 text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400'
+      return 'border-zinc-200 bg-[var(--surface-2)] text-zinc-600 dark:border-zinc-800 dark:text-zinc-400'
   }
 })
 </script>

@@ -144,6 +144,8 @@ export const st = reactive({
     imageUrl: '',
     /** 图片可见度（0–100，越低遮罩越强） */
     opacity: 60,
+    /** 背景图模糊度（px） */
+    blur: 0,
   },
   /** 命令参数输入 / 信息展示弹框 */
   dialog: {
@@ -676,6 +678,7 @@ interface UiPref {
   sidebarPinned: boolean
   locale: string
   bgOpacity: number
+  bgBlur: number
 }
 
 function loadUiPref(): UiPref {
@@ -683,6 +686,7 @@ function loadUiPref(): UiPref {
   let sidebarPinned = false
   let loc = ''
   let bgOpacity = 60
+  let bgBlur = 0
   try {
     const raw = rawGet(UI_KEY)
     if (raw) {
@@ -691,11 +695,13 @@ function loadUiPref(): UiPref {
         sidebarPinned?: unknown
         locale?: unknown
         bgOpacity?: unknown
+        bgBlur?: unknown
       }
       if (typeof p.dark === 'boolean') dark = p.dark
       if (typeof p.sidebarPinned === 'boolean') sidebarPinned = p.sidebarPinned
       if (isLocaleId(p.locale)) loc = p.locale
       if (typeof p.bgOpacity === 'number') bgOpacity = Math.max(0, Math.min(100, p.bgOpacity))
+      if (typeof p.bgBlur === 'number') bgBlur = Math.max(0, Math.min(40, p.bgBlur))
     }
   } catch {
     /* 忽略 */
@@ -703,7 +709,7 @@ function loadUiPref(): UiPref {
   if (dark === null) {
     dark = !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)
   }
-  return { dark, sidebarPinned, locale: loc || detectLocale(), bgOpacity }
+  return { dark, sidebarPinned, locale: loc || detectLocale(), bgOpacity, bgBlur }
 }
 
 function saveUiPref(): void {
@@ -714,6 +720,7 @@ function saveUiPref(): void {
       sidebarPinned: st.sidebarPinned,
       locale: locale.value,
       bgOpacity: st.appearance.opacity,
+      bgBlur: st.appearance.blur,
     }),
   )
 }
@@ -943,10 +950,16 @@ const BG_KEY = 'appearance.background'
 const BG_MAX_BYTES = 8 * 1024 * 1024
 let bgObjectUrl: string | null = null
 
+function syncBackgroundClass(): void {
+  // 把「是否有壁纸」挂到 <html> 上，与 .dark 同层，CSS 变量据此切换半透明表面
+  document.documentElement.classList.toggle('has-bg', !!st.appearance.imageUrl)
+}
+
 function applyBackgroundBlob(blob: Blob): void {
   if (bgObjectUrl) URL.revokeObjectURL(bgObjectUrl)
   bgObjectUrl = URL.createObjectURL(blob)
   st.appearance.imageUrl = bgObjectUrl
+  syncBackgroundClass()
 }
 
 /** 启动时把上次保存的背景图从 IndexedDB 读回（objectURL 仅存活于当前会话） */
@@ -980,11 +993,17 @@ export async function clearBackgroundImage(): Promise<void> {
     bgObjectUrl = null
   }
   st.appearance.imageUrl = ''
+  syncBackgroundClass()
   showToast(t('settings.imageCleared'))
 }
 
 export function setBackgroundOpacity(value: number): void {
   st.appearance.opacity = Math.max(0, Math.min(100, Math.round(value)))
+  saveUiPref()
+}
+
+export function setBackgroundBlur(value: number): void {
+  st.appearance.blur = Math.max(0, Math.min(40, Math.round(value)))
   saveUiPref()
 }
 
@@ -1062,6 +1081,7 @@ export function init(): void {
   st.sidebarPinned = pref.sidebarPinned
   setLocale(pref.locale)
   st.appearance.opacity = pref.bgOpacity
+  st.appearance.blur = pref.bgBlur
   void loadBackgroundImage()
   normalizeOrder()
   applyThemeClass()

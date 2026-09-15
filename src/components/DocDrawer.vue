@@ -15,7 +15,7 @@ import DocList from './DocList.vue'
   <Transition name="slide">
     <aside
       v-if="st.sidebarOpen && !st.sidebarPinned"
-      class="fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900"
+      class="fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-zinc-200 bg-[var(--surface)] shadow-2xl dark:border-zinc-800"
     >
       <DocList mode="overlay" />
     </aside>

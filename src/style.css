@@ -35,7 +35,8 @@ body {
 /* ---------- 通用按钮 ---------- */
 @layer components {
   .btn {
-    @apply inline-flex cursor-pointer items-center gap-1 rounded-md border border-zinc-300 bg-white px-2 py-1 text-xs font-medium text-zinc-700 transition-colors select-none hover:border-indigo-400 hover:text-indigo-600 focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:outline-none active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:border-indigo-400 dark:hover:text-indigo-300;
+    @apply inline-flex cursor-pointer items-center gap-1 rounded-md border border-zinc-300 px-2 py-1 text-xs font-medium text-zinc-700 transition-colors select-none hover:border-indigo-400 hover:text-indigo-600 focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:outline-none active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-200 dark:hover:border-indigo-400 dark:hover:text-indigo-300;
+    background-color: var(--surface);
   }
   .btn-icon {
     @apply p-1.5 text-sm leading-none;
@@ -84,27 +85,35 @@ body {
   transform: scale(0.96);
 }
 
-/* ---------- 背景图片（外观设置）：让各面板与编辑器透出背景 ---------- */
-.has-bg {
-  background-color: transparent !important;
+/* ---------- 主题表面色：统一由变量驱动 ----------
+   壁纸模式下变量自动切为半透明，因此「面板/按钮/编辑区是否透出壁纸」只需在这里控制一处，
+   深色模式则由 html.dark 决定，不会出现深色下套用浅色面板的问题。 */
+:root {
+  --surface: #ffffff;
+  --surface-2: #f4f4f5;
+  --editor-bg: #ffffff;
 }
-.has-bg header,
-.has-bg footer,
-.has-bg aside,
-.has-bg nav {
-  background-color: rgb(255 255 255 / 0.72) !important;
+html.dark {
+  --surface: #18181b;
+  --surface-2: #27272a;
+  --editor-bg: #09090b;
 }
-.dark.has-bg header,
-.dark.has-bg footer,
-.dark.has-bg aside,
-.dark.has-bg nav {
-  background-color: rgb(24 24 27 / 0.72) !important;
+html.has-bg {
+  --surface: rgb(255 255 255 / 0.72);
+  --surface-2: rgb(244 244 245 / 0.6);
+  --editor-bg: transparent;
 }
-/* Monaco 自身背景改为透明，否则会遮住背景图 */
-.has-bg .monaco-editor,
-.has-bg .monaco-editor .margin,
-.has-bg .monaco-editor .monaco-editor-background,
-.has-bg .monaco-editor .view-overlays,
-.has-bg .monaco-editor .current-line {
+html.dark.has-bg {
+  --surface: rgb(24 24 27 / 0.72);
+  --surface-2: rgb(39 39 42 / 0.55);
+  --editor-bg: transparent;
+}
+
+/* Monaco 自身背景必须显式透明，否则会遮住壁纸 */
+html.has-bg .monaco-editor,
+html.has-bg .monaco-editor .margin,
+html.has-bg .monaco-editor .monaco-editor-background,
+html.has-bg .monaco-editor .view-overlays,
+html.has-bg .monaco-editor .current-line {
   background: transparent !important;
 }

@@ -38,7 +38,7 @@ function onKeydown(e: KeyboardEvent): void {
     >
       <Transition name="pop" appear>
         <div
-          class="w-[26rem] max-w-full overflow-hidden rounded-xl border border-black/10 bg-white shadow-2xl dark:border-white/10 dark:bg-zinc-900"
+          class="w-[26rem] max-w-full overflow-hidden rounded-xl border border-black/10 bg-[var(--surface)] shadow-2xl dark:border-white/10"
         >
           <div
             class="border-b border-zinc-200 px-4 py-2.5 text-sm font-semibold text-zinc-800 dark:border-zinc-700 dark:text-zinc-100"
@@ -56,7 +56,7 @@ function onKeydown(e: KeyboardEvent): void {
                 v-model="st.dialog.value"
                 data-testid="dialog-input"
                 :placeholder="st.dialog.placeholder"
-                class="w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 font-mono text-sm text-zinc-800 outline-none focus:border-indigo-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                class="w-full rounded-md border border-zinc-300 bg-[var(--surface-2)] px-2 py-1.5 font-mono text-sm text-zinc-800 outline-none focus:border-indigo-400 dark:border-zinc-700 dark:text-zinc-100"
                 @keydown="onKeydown"
               />
             </template>

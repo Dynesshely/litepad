@@ -88,7 +88,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
     >
       <Transition name="pop" appear>
         <div
-          class="w-[22rem] max-w-full overflow-hidden rounded-2xl border border-black/10 bg-white/95 shadow-2xl backdrop-blur-xl dark:border-white/10 dark:bg-zinc-900/95"
+          class="w-[22rem] max-w-full overflow-hidden rounded-2xl border border-black/10 bg-[var(--surface)] shadow-2xl backdrop-blur-xl dark:border-white/10"
         >
           <!-- 图标 / 应用名 / 版本 -->
           <div class="flex flex-col items-center gap-1.5 px-6 pt-8 pb-5 text-center">
@@ -103,7 +103,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 
           <!-- 规格行（细分割线，macOS 风格） -->
           <div
-            class="mx-4 mb-3 overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50/80 dark:border-zinc-700 dark:bg-zinc-800/40"
+            class="mx-4 mb-3 overflow-hidden rounded-xl border border-zinc-200 bg-[var(--surface-2)] dark:border-zinc-700"
           >
             <div
               v-for="(row, i) in rows"

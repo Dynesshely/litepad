@@ -26,15 +26,18 @@ const scrim = computed(() => {
 
 <template>
   <div
-    class="flex h-screen flex-col overflow-hidden bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100"
-    :class="st.appearance.imageUrl ? 'has-bg' : ''"
+    class="flex h-screen flex-col overflow-hidden bg-zinc-50 text-zinc-900 dark:text-zinc-100"
   >
     <!-- 外观：背景图片（取自 IndexedDB，objectURL 仅当前会话有效） -->
     <div
       v-if="st.appearance.imageUrl"
       data-testid="bg-image"
       class="pointer-events-none fixed inset-0 -z-10 bg-cover bg-center"
-      :style="{ backgroundImage: `url('${st.appearance.imageUrl}')` }"
+      :style="{
+        backgroundImage: `url('${st.appearance.imageUrl}')`,
+        filter: st.appearance.blur ? `blur(${st.appearance.blur}px)` : 'none',
+        transform: st.appearance.blur ? 'scale(1.06)' : 'none',
+      }"
     ></div>
     <div
       v-if="st.appearance.imageUrl"
@@ -50,7 +53,7 @@ const scrim = computed(() => {
       <aside
         v-if="st.sidebarPinned"
         data-testid="doc-panel"
-        class="flex w-72 shrink-0 flex-col border-r border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"
+        class="flex w-72 shrink-0 flex-col border-r border-zinc-200 bg-[var(--surface)] dark:border-zinc-800"
       >
         <DocList mode="docked" />
       </aside>

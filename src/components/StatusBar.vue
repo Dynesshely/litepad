@@ -45,7 +45,7 @@ function onSelect(id: string): void {
 
 <template>
   <footer
-    class="relative flex min-h-7 flex-wrap items-center gap-x-3 gap-y-0.5 border-t border-zinc-200 bg-white px-3 py-1 text-[11px] text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400"
+    class="relative flex min-h-7 flex-wrap items-center gap-x-3 gap-y-0.5 border-t border-zinc-200 bg-[var(--surface)] px-3 py-1 text-[11px] text-zinc-500 dark:border-zinc-800 dark:text-zinc-400"
   >
     <span class="inline-flex items-center gap-1.5">
       <span class="h-1.5 w-1.5 rounded-full" :class="dotClass"></span>
@@ -55,8 +55,8 @@ function onSelect(id: string): void {
     <!-- 文本编码：显示当前草稿编码，点击可手动指定 -->
     <button
       data-testid="enc-btn"
-      class="cursor-pointer rounded px-1.5 py-0.5 font-mono text-[11px] transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800"
-      :class="menuOpen ? 'bg-zinc-100 text-indigo-600 dark:bg-zinc-800 dark:text-indigo-300' : ''"
+      class="cursor-pointer rounded px-1.5 py-0.5 font-mono text-[11px] transition-colors hover:bg-[var(--surface-2)]"
+      :class="menuOpen ? 'bg-[var(--surface-2)] text-indigo-600 dark:text-indigo-300' : ''"
       :title="t('enc.current')"
       @click="menuOpen = !menuOpen"
     >

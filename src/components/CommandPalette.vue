@@ -83,7 +83,7 @@ onMounted(() => {
       <Transition name="pop" appear>
         <div
           data-testid="palette"
-          class="w-[38rem] max-w-full overflow-hidden rounded-xl border border-black/10 bg-white shadow-2xl dark:border-white/10 dark:bg-zinc-900"
+          class="w-[38rem] max-w-full overflow-hidden rounded-xl border border-black/10 bg-[var(--surface)] shadow-2xl dark:border-white/10"
         >
           <input
             ref="inputEl"
@@ -104,11 +104,7 @@ onMounted(() => {
               :data-command="row.def.id"
               :data-active="i === active"
               class="flex w-full cursor-pointer items-center justify-between gap-3 px-4 py-1.5 text-left text-xs transition-colors"
-              :class="
-                i === active
-                  ? 'bg-indigo-500 text-white'
-                  : 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800'
-              "
+              :class="i === active ? 'bg-indigo-500 text-white' : 'text-zinc-700 hover:bg-[var(--surface-2)] dark:text-zinc-200 '"
               @mousemove="active = i"
               @click="run(i)"
             >

@@ -27,6 +27,7 @@ import {
   closeSettings,
   docs,
   importBackupFile,
+  setBackgroundBlur,
   setBackgroundImage,
   setBackgroundOpacity,
   setDark,
@@ -65,6 +66,12 @@ const SETTINGS: SettingItem[] = [
     page: 'appearance',
     labelKey: 'settings.appearance.background',
     keywords: ['background', 'wallpaper', 'image', 'picture', '背景', '壁纸', '图片'],
+  },
+  {
+    id: 'appearance.blur',
+    page: 'appearance',
+    labelKey: 'settings.appearance.blur',
+    keywords: ['blur', 'soften', '模糊', '虚化'],
   },
   {
     id: 'appearance.opacity',
@@ -187,6 +194,10 @@ function onOpacity(e: Event): void {
   setBackgroundOpacity(Number((e.target as HTMLInputElement).value))
 }
 
+function onBlur(e: Event): void {
+  setBackgroundBlur(Number((e.target as HTMLInputElement).value))
+}
+
 /** 每次打开：清空搜索词并把焦点放进搜索框（组件常驻挂载，输入框要等 v-if 渲染完） */
 watch(
   () => st.settingsOpen,
@@ -209,7 +220,7 @@ watch(
     >
       <Transition name="pop" appear>
         <div
-          class="flex h-[34rem] max-h-[86vh] w-[52rem] max-w-full flex-col overflow-hidden rounded-2xl border border-black/10 bg-white shadow-2xl dark:border-white/10 dark:bg-zinc-900"
+          class="flex h-[34rem] max-h-[86vh] w-[52rem] max-w-full flex-col overflow-hidden rounded-2xl border border-black/10 bg-[var(--surface)] shadow-2xl dark:border-white/10"
         >
           <!-- ① 上部整宽顶栏：搜索 -->
           <div class="relative shrink-0 border-b border-zinc-200 dark:border-zinc-800">
@@ -239,7 +250,7 @@ watch(
             <div
               v-if="query.trim()"
               data-testid="settings-results"
-              class="absolute inset-x-2 top-full z-20 mt-1 max-h-64 overflow-y-auto rounded-lg border border-zinc-200 bg-white py-1 shadow-xl dark:border-zinc-700 dark:bg-zinc-900"
+              class="absolute inset-x-2 top-full z-20 mt-1 max-h-64 overflow-y-auto rounded-lg border border-zinc-200 bg-[var(--surface)] py-1 shadow-xl dark:border-zinc-700"
             >
               <button
                 v-for="(item, i) in results"
@@ -247,11 +258,7 @@ watch(
                 :data-setting="item.id"
                 :data-active="i === active"
                 class="flex w-full cursor-pointer items-center justify-between gap-3 px-3 py-1.5 text-left text-xs transition-colors"
-                :class="
-                  i === active
-                    ? 'bg-indigo-500 text-white'
-                    : 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800'
-                "
+                :class="i === active ? 'bg-indigo-500 text-white' : 'text-zinc-700 hover:bg-[var(--surface-2)] dark:text-zinc-200 '"
                 @mousemove="active = i"
                 @click="jumpTo(item)"
               >
@@ -273,7 +280,7 @@ watch(
           <div class="flex min-h-0 flex-1">
             <nav
               data-testid="settings-nav"
-              class="w-44 shrink-0 overflow-y-auto border-r border-zinc-200 bg-zinc-50/70 p-1.5 dark:border-zinc-800 dark:bg-zinc-950/40"
+              class="w-44 shrink-0 overflow-y-auto border-r border-zinc-200 bg-[var(--surface-2)] p-1.5 dark:border-zinc-800"
             >
               <button
                 v-for="p in PAGES"
@@ -281,11 +288,7 @@ watch(
                 :data-page="p.id"
                 :data-active="page === p.id"
                 class="mb-0.5 flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs transition-colors"
-                :class="
-                  page === p.id
-                    ? 'bg-white font-medium text-indigo-600 shadow-sm dark:bg-zinc-800 dark:text-indigo-300'
-                    : 'text-zinc-600 hover:bg-white/70 dark:text-zinc-300 dark:hover:bg-zinc-800/60'
-                "
+                :class="page === p.id ? 'bg-[var(--surface)] font-medium text-indigo-600 shadow-sm dark:text-indigo-300' : 'text-zinc-600 hover:bg-[var(--surface-2)] dark:text-zinc-300 '"
                 @click="selectPage(p.id)"
               >
                 <ImageIcon v-if="p.id === 'appearance'" class="h-3.5 w-3.5" aria-hidden="true" />
@@ -402,6 +405,35 @@ watch(
                       data-testid="bg-thumb"
                       class="h-10 w-16 rounded-md border border-zinc-200 object-cover dark:border-zinc-700"
                     />
+                  </div>
+                </div>
+
+                <div
+                  :data-setting-row="'appearance.blur'"
+                  class="mb-2 rounded-xl border border-zinc-200 p-3 transition-all dark:border-zinc-700"
+                  :class="rowClass('appearance.blur')"
+                >
+                  <div class="mb-1 text-xs font-medium text-zinc-700 dark:text-zinc-200">
+                    {{ t('settings.appearance.blur') }}
+                  </div>
+                  <p class="mb-2 text-[11px] leading-4 text-zinc-400 dark:text-zinc-500">
+                    {{ t('settings.appearance.blurHint') }}
+                  </p>
+                  <div class="flex items-center gap-3">
+                    <input
+                      data-testid="bg-blur"
+                      type="range"
+                      min="0"
+                      max="40"
+                      step="1"
+                      :value="st.appearance.blur"
+                      :disabled="!st.appearance.imageUrl"
+                      class="h-1.5 w-56 cursor-pointer accent-indigo-500 disabled:opacity-40"
+                      @input="onBlur"
+                    />
+                    <span class="w-10 font-mono text-[11px] text-zinc-500 dark:text-zinc-400">
+                      {{ st.appearance.blur }}px
+                    </span>
                   </div>
                 </div>
 

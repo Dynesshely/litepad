@@ -156,14 +156,8 @@ function onRowClick(id: string): void {
         :data-doc-id="d.id"
         :data-index="index"
         data-testid="doc-row"
-        class="group mb-0.5 flex cursor-pointer touch-pan-y items-center gap-2 rounded-lg px-2 py-1.5 transition-colors select-none hover:bg-zinc-100 dark:hover:bg-zinc-800"
-        :class="[
-          d.id === st.currentId ? 'bg-zinc-100 dark:bg-zinc-800' : '',
-          drag.active && drag.id === d.id ? 'opacity-40' : '',
-          drag.active && drag.over === index && drag.id !== d.id
-            ? 'ring-2 ring-indigo-400 dark:ring-indigo-500'
-            : '',
-        ]"
+        class="group mb-0.5 flex cursor-pointer touch-pan-y items-center gap-2 rounded-lg px-2 py-1.5 transition-colors select-none hover:bg-[var(--surface-2)]"
+        :class="[ d.id === st.currentId ? 'bg-[var(--surface-2)]' : '', drag.active && drag.id === d.id ? 'opacity-40' : '', drag.active && drag.over === index && drag.id !== d.id ? 'ring-2 ring-indigo-400 dark:ring-indigo-500' : '', ]"
         @pointerdown="onRowPointerDown($event, d.id, index)"
         @click="onRowClick(d.id)"
       >

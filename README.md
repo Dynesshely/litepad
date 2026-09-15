@@ -159,6 +159,24 @@ litepad/
 配 `scope` 与纯函数 `transform`），再到 `src/lib/i18n.ts` 补标题键即可 —— 命令实现与编辑器交互解耦，
 `src/lib/textOps.ts` 里的纯函数可独立测试。
 
+## 代码着色与语言
+
+底栏（状态栏）显示当前草稿的语言，**点击即可切换** —— 与文本编码并排，都是「每篇草稿各自记住」的属性。
+
+- **语言菜单**：顶部是「自动检测 / 纯文本」，其余按「常用 / 全部」分组，带搜索框
+  （语言名称取自 Monaco 注册表，因此与编辑器实际可用的语言完全一致，当前有 90+ 种）；
+- **语言模式按草稿独立保存**（元数据 `lang` 字段，`auto` 表示自动检测），切换草稿、刷新页面都会保留；
+- **自动检测**（默认）：只看正文前 20000 字符，按 JSON / XML / HTML / PHP / shebang / Dockerfile / YAML /
+  SQL / Go / Rust / Java / C / C++ / C# / Python / TypeScript / JavaScript / Ruby / Markdown / CSS 的顺序找特征；
+  信号不够明确时**宁可不猜**，回退到纯文本 —— 猜错着色比不着色更让人困惑。输入停止 500ms 后重算，
+  只有结果真的变了才动编辑器（避免反复清空 token 缓存）；
+- **入口不止底栏**：命令面板里有「切换代码语言…」（`nav.langMode`）；
+- **着色只做着色**：只注册 editor worker —— 语法着色走 Monarch 词法，不需要语言服务 worker。
+  因此显式关掉了 Monaco 自带 json/css/html/typescript 的语言服务
+  （否则 hover/诊断/inlay hints 会把协议消息打到 editor worker 上，抛出
+  `Missing requestHandler or method: getSyntacticDiagnostics` 这类未捕获错误）。
+  Litepad 刻意不做补全/诊断那套 IDE 能力 —— 要那些请用 VSCode。
+
 ## 文本编码
 
 编码只在**字节边界**上有意义：导出 .txt 时把字符串编成字节，导入 .txt 时把字节解回字符串；

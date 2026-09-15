@@ -68,7 +68,12 @@ export interface ActionCommand extends CommandBase {
   kind: 'action'
   prompt?: CommandPromptDef
   /** 动作类命令：不直接改文本，由 store 注入编辑器动作（如跳转） */
-  run: (ctx: { target: TextTarget; value: string; goToLine: (line: number) => void }) => void
+  run: (ctx: {
+    target: TextTarget
+    value: string
+    goToLine: (line: number) => void
+    openSettings: () => void
+  }) => void
 }
 
 export type CommandDef = TransformCommand | InfoCommand | ActionCommand
@@ -395,6 +400,14 @@ export const COMMANDS: CommandDef[] = [
         ],
       }
     },
+  },
+  {
+    kind: 'action',
+    id: 'nav.openSettings',
+    groupKey: G_NAV,
+    titleKey: 'cmd.nav.openSettings',
+    keywords: ['settings', 'preferences', 'config', '设置', '偏好'],
+    run: ({ openSettings }) => openSettings(),
   },
   {
     kind: 'action',

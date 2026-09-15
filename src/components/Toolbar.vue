@@ -2,27 +2,25 @@
 import { ref } from 'vue'
 import {
   Command,
-  DatabaseBackup,
   Download,
   FilePlus2,
-  FolderOpen,
   History,
   Languages,
   Moon,
   PanelLeft,
+  Settings,
   Sun,
   Undo2,
 } from '@lucide/vue'
 import {
   st,
-  backupAll,
   changeLocale,
   createNewDoc,
   exportCurrentTxt,
-  importBackupFile,
   openAbout,
   openHistory,
   openPalette,
+  openSettings,
   toggleDark,
   toggleSidebar,
   undoOneStep,
@@ -31,14 +29,7 @@ import { locale, localeShort, t } from '../lib/i18n'
 import LocaleMenu from './LocaleMenu.vue'
 import BrandLogo from './BrandLogo.vue'
 
-const fileInput = ref<HTMLInputElement | null>(null)
 const langOpen = ref(false)
-
-function onFile(e: Event): void {
-  const input = e.target as HTMLInputElement
-  if (input.files && input.files[0]) importBackupFile(input.files[0])
-  input.value = ''
-}
 
 function onLocale(id: string): void {
   changeLocale(id)
@@ -99,17 +90,17 @@ function onLocale(id: string): void {
       <Download class="h-3.5 w-3.5" aria-hidden="true" />
       {{ t('tb.export') }}
     </button>
-    <button class="btn" :title="t('tb.backupTitle')" @click="backupAll()">
-      <DatabaseBackup class="h-3.5 w-3.5" aria-hidden="true" />
-      {{ t('tb.backup') }}
-    </button>
-    <button class="btn" :title="t('tb.importTitle')" @click="fileInput?.click()">
-      <FolderOpen class="h-3.5 w-3.5" aria-hidden="true" />
-      {{ t('tb.import') }}
-    </button>
-    <input ref="fileInput" type="file" accept=".json,application/json" class="hidden" @change="onFile" />
-
     <div class="flex-1"></div>
+
+    <button
+      data-testid="settings-btn"
+      class="btn"
+      :title="t('settings.title')"
+      @click="openSettings()"
+    >
+      <Settings class="h-3.5 w-3.5" aria-hidden="true" />
+      {{ t('settings.title') }}
+    </button>
 
     <!-- 语言切换：紧邻主题切换按钮的左侧 -->
     <div class="relative">

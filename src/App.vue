@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { init, st } from './store'
 import MonacoEditor from './components/MonacoEditor.vue'
 import Toolbar from './components/Toolbar.vue'
@@ -8,18 +9,39 @@ import DocList from './components/DocList.vue'
 import HistoryModal from './components/HistoryModal.vue'
 import AboutModal from './components/AboutModal.vue'
 import CommandPalette from './components/CommandPalette.vue'
+import SettingsModal from './components/SettingsModal.vue'
 import PromptDialog from './components/PromptDialog.vue'
 import BannerHost from './components/BannerHost.vue'
 import ToastHost from './components/ToastHost.vue'
 
 // init 在 setup 阶段执行：先于子组件挂载，保证 Monaco 挂载时文档已就绪
 init()
+
+/** 背景图上方的遮罩：可见度越低遮罩越强，保证正文可读 */
+const scrim = computed(() => {
+  const alpha = Math.max(0, Math.min(1, 1 - st.appearance.opacity / 100))
+  return st.dark ? `rgba(9, 9, 11, ${alpha})` : `rgba(250, 250, 250, ${alpha})`
+})
 </script>
 
 <template>
   <div
     class="flex h-screen flex-col overflow-hidden bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100"
+    :class="st.appearance.imageUrl ? 'has-bg' : ''"
   >
+    <!-- 外观：背景图片（取自 IndexedDB，objectURL 仅当前会话有效） -->
+    <div
+      v-if="st.appearance.imageUrl"
+      data-testid="bg-image"
+      class="pointer-events-none fixed inset-0 -z-10 bg-cover bg-center"
+      :style="{ backgroundImage: `url('${st.appearance.imageUrl}')` }"
+    ></div>
+    <div
+      v-if="st.appearance.imageUrl"
+      data-testid="bg-scrim"
+      class="pointer-events-none fixed inset-0 -z-10"
+      :style="{ backgroundColor: scrim }"
+    ></div>
     <Toolbar />
     <BannerHost />
 
@@ -46,6 +68,7 @@ init()
     <HistoryModal />
     <AboutModal />
     <CommandPalette v-if="st.paletteOpen" />
+    <SettingsModal />
     <PromptDialog />
     <ToastHost />
   </div>

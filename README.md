@@ -177,6 +177,16 @@ litepad/
   `Missing requestHandler or method: getSyntacticDiagnostics` 这类未捕获错误）。
   Litepad 刻意不做补全/诊断那套 IDE 能力 —— 要那些请用 VSCode。
 
+## 底栏（状态栏）排版约定
+
+底栏所有条目**必须使用同一种字体**，不要单独给某一项加 `font-mono`：
+
+- 底栏的 `line-height` 是固定的 16.5px，此时基线在行盒内的位置由字体自身的 ascent/descent 决定
+  （`(line-height − (A+D)) / 2 + A`）。等宽字体与界面字体的度量不同，于是「UTF-8」会比旁边条目高约 1px；
+- 现象与验证：`e2e/feature8-test.cjs` 断言「底栏所有条目同一字体 + 行盒顶/底完全一致」，
+  把 `font-mono` 加回去这条会立刻失败（本容器里的 DejaVu 各字族共用一套纵向度量，复现不出 macOS 上
+  SF Mono 与 SF Pro 的差异，所以这条断言才是真正的守卫）。
+
 ## 文本编码
 
 编码只在**字节边界**上有意义：导出 .txt 时把字符串编成字节，导入 .txt 时把字节解回字符串；

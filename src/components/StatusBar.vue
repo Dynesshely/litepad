@@ -60,10 +60,12 @@ function onSelect(id: string): void {
       <span :class="msgClass">{{ saveText }}</span>
     </span>
 
-    <!-- 文本编码：显示当前草稿编码，点击可手动指定 -->
+    <!-- 文本编码：显示当前草稿编码，点击可手动指定。
+         刻意不用 font-mono：等宽字体的字面高度与基线位置和界面字体不同，
+         同样 11px 下「UTF-8」会比旁边条目高约 1px（实测墨迹中心 13.75 vs 14.75）。 -->
     <button
       data-testid="enc-btn"
-      class="cursor-pointer rounded px-1.5 py-0.5 font-mono text-[11px] transition-colors hover:bg-[var(--surface-2)]"
+      class="cursor-pointer rounded px-1.5 py-0.5 text-[11px] transition-colors hover:bg-[var(--surface-2)]"
       :class="menuOpen ? 'bg-[var(--surface-2)] text-indigo-600 dark:text-indigo-300' : ''"
       :title="t('enc.current')"
       @click="menuOpen = !menuOpen"

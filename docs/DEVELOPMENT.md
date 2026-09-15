@@ -107,6 +107,16 @@ litepad/
 键前缀固定为 `dsh.scratch.v1.*`，**刻意不跟着项目改名** —— 改名会让已有草稿读不到。
 `dsh.` 前缀来自当初的工具目录命名，属于历史包袱，但数据兼容优先于命名整洁。
 
+### README 用的图片
+
+README 顶部的图标**直接引用 `src/assets/favicon.svg`**（页内 LOGO 与站点图标的唯一来源），
+不要在 docs 下再放一份副本 —— 否则改图标要改两处。页面截图放在 `docs/images/`，
+命名按「内容 + 主题」组织（如 `overview-dark.png`），以后补图沿用同一规律。
+
+`../e2e/render-readme.cjs` 可以把 README 按近似 GitHub 的排版渲染成截图，
+改完顶部装饰后可以跑一次肉眼确认（用 Playwright 的 route 把仓库文件当静态资源，
+不需要额外起服务）。
+
 ### 底栏（状态栏）排版
 
 底栏所有条目**必须使用同一种字体**，不要给某一项单独加 `font-mono`：底栏 `line-height` 固定 16.5px 时，

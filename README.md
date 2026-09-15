@@ -1,15 +1,35 @@
-# Litepad
+<p align="center">
+  <img src="src/assets/favicon.svg" width="104" height="104" alt="Litepad 图标：靛蓝渐变底板上叠着白色便签纸与铅笔，右上角是自动保存状态绿点">
+</p>
 
-**打开标签页就能记东西的临时文本编辑器。** 纯本地、零后端、自动保存 —— 不需要 Ctrl+S，
-不弹任何保存对话框；每个草稿只存在你自己浏览器的 `localStorage` 里，无账号、无网络依赖，
-数据不经过任何服务器。
+<h1 align="center">Litepad</h1>
 
-技术栈：Vue 3 + TypeScript + Vite + Tailwind CSS v4 + Monaco Editor（VS Code 同款编辑器内核）。
+<p align="center">
+  <b>打开标签页就能记东西的临时文本编辑器</b><br />
+  纯本地 · 零后端 · 自动保存 · 不弹保存对话框
+</p>
 
-![Litepad 主界面：深色主题 + 背景图片 + 左侧常驻草稿列表](docs/images/overview-dark.png)
+<p align="center">
+  <code>Vue 3</code>&nbsp; <code>TypeScript</code>&nbsp; <code>Vite</code>&nbsp; <code>Tailwind CSS v4</code>&nbsp;
+  <code>Monaco Editor</code>
+</p>
+
+<p align="center">
+  <img src="docs/images/overview-dark.png" width="880" alt="Litepad 主界面：深色主题、背景图片、左侧常驻草稿列表，底栏显示保存状态、文本编码、代码语言与存储占用">
+</p>
+
+<p align="center">
+  <sub>深色主题 + 背景图片 + 左侧常驻草稿列表（草稿列表可在浮层抽屉与固定面板间切换）</sub>
+</p>
+
+---
+
+每个草稿都只存在你自己浏览器的 `localStorage` 里：无账号、无网络依赖，数据不经过任何服务器。
+按 `Ctrl+S` 也不会弹保存框，只会提示「无需手动保存：内容已自动保存」。
 
 ## 特性
 
+- **VS Code 同款编辑器内核**：Monaco Editor —— 语法着色、多光标、查找替换、每篇草稿独立撤销栈；
 - **自动保存**：停止输入 400ms 落盘，切换标签/关闭页面/刷新都会强制落盘，断电重启也不丢；
 - **每个标签一篇草稿**：草稿列表可在浮层抽屉与左侧全高常驻面板之间切换（状态持久化），支持拖动排序与「最近更新」一键重排；
 - **误删不怕**：`doc` / `doc.bak` 双键轮换 + 每 20 秒一份历史快照（每篇最多 40 份），可「回退一步」或从任意快照恢复；

@@ -112,6 +112,12 @@ litepad/
 - **表面色统一由 CSS 变量驱动**（`--surface` / `--surface-2` / `--editor-bg`）：
   `html.has-bg` 把面板切为半透明、把 `--editor-bg` 设为 `transparent`（Monaco 另有显式透明规则），
   深色由 `html.dark` 决定 —— 因此壁纸下顶栏/状态栏/按钮/选中草稿/编辑区都会透出壁纸，且深色主题仍是深色面板；
+- **根容器背景同样必须透明**（`--app-bg`，`html.has-bg` 时置为 `transparent`）：
+  壁纸层是 `position: fixed; z-index: -10`，任何不透明祖先背景都会把它整块盖住——
+  之前 `#app` 根 div 写死 `bg-zinc-50`，于是壁纸在任何主题下都完全不可见，深色模式还会露出一层浅色底。
+  另有 `--app-base` 挂在 `<html>` 上做兜底不透明底色（图片加载前不闪白）；
+- **首屏不闪不透明底色**：图片本体在 IndexedDB 里只能异步读回，因此「是否已设置壁纸」额外用同步的
+  `hasBg` 标记存进 `dsh.scratch.v1.ui`，`index.html` 的防闪烁脚本与 store 初始化都会据此先加上 `has-bg`；
 - 限制：仅图片类型、上限 8MB；IndexedDB 不可用（如部分隐私模式）时会明确提示而不是静默失败。
 
 ## 图标（Lucide）
@@ -185,7 +191,7 @@ litepad/
 
 - **存储键**：`dsh.scratch.v1.index`（草稿元数据，含 `encoding` 与 `order`）、`dsh.scratch.v1.doc.<id>`（正文）、
   `dsh.scratch.v1.doc.<id>.bak`（上一次保存的备份）、`dsh.scratch.v1.doc.<id>.hist`（历史快照）、
-  `dsh.scratch.v1.ui`（主题 + 列表固定 + 界面语言偏好）。
+  `dsh.scratch.v1.ui`（主题 + 列表固定 + 界面语言 + 壁纸可见度/模糊度/`hasBg` 标记）。
   键契约与旧版单文件原型（`legacy/scratch.html`）一致 —— 换到本工程后旧草稿自动继承。
 - **触发时机**：输入停止 400ms 后落盘；`visibilitychange`/`pagehide`/`beforeunload` 强制 flush。
 - **配额写满**：自动降级到 sessionStorage 并红色横幅警示，状态栏实时显示占用空间。

@@ -26,7 +26,7 @@ const scrim = computed(() => {
 
 <template>
   <div
-    class="flex h-screen flex-col overflow-hidden bg-zinc-50 text-zinc-900 dark:text-zinc-100"
+    class="flex h-screen flex-col overflow-hidden bg-[var(--app-bg)] text-zinc-900 dark:text-zinc-100"
   >
     <!-- 外观：背景图片（取自 IndexedDB，objectURL 仅当前会话有效） -->
     <div

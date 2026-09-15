@@ -89,24 +89,37 @@ body {
    壁纸模式下变量自动切为半透明，因此「面板/按钮/编辑区是否透出壁纸」只需在这里控制一处，
    深色模式则由 html.dark 决定，不会出现深色下套用浅色面板的问题。 */
 :root {
+  --app-base: #fafafa;
+  --app-bg: #fafafa;
   --surface: #ffffff;
   --surface-2: #f4f4f5;
   --editor-bg: #ffffff;
 }
 html.dark {
+  --app-base: #09090b;
+  --app-bg: #09090b;
   --surface: #18181b;
   --surface-2: #27272a;
   --editor-bg: #09090b;
 }
+/* 有壁纸时根容器必须透明：壁纸层是 fixed + z-index:-10，任何不透明祖先背景都会把它整块盖住
+   （曾经 #app 根 div 写死 bg-zinc-50，导致壁纸永远不可见、深色模式还露出一层浅色底）。 */
 html.has-bg {
+  --app-bg: transparent;
   --surface: rgb(255 255 255 / 0.72);
   --surface-2: rgb(244 244 245 / 0.6);
   --editor-bg: transparent;
 }
 html.dark.has-bg {
+  --app-bg: transparent;
   --surface: rgb(24 24 27 / 0.72);
   --surface-2: rgb(39 39 42 / 0.55);
   --editor-bg: transparent;
+}
+
+/* html 永远保留一层不透明底色（壁纸层绘制在它之上），图片未加载完时也不会闪白 */
+html {
+  background-color: var(--app-base);
 }
 
 /* Monaco 自身背景必须显式透明，否则会遮住壁纸 */

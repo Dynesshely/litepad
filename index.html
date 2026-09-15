@@ -14,7 +14,7 @@
     <link rel="manifest" href="/site.webmanifest" />
     <title>Litepad · 自动保存</title>
     <script>
-      // 在应用挂载前恢复主题偏好，避免深浅色闪烁（FOUC）
+      // 在应用挂载前恢复主题/壁纸偏好，避免深浅色与半透明表面的闪烁（FOUC）
       ;(function () {
         try {
           var p = JSON.parse(localStorage.getItem('dsh.scratch.v1.ui') || 'null')
@@ -22,7 +22,10 @@
             p && typeof p.dark === 'boolean'
               ? p.dark
               : window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-          if (dark) document.documentElement.classList.add('dark')
+          var root = document.documentElement
+          if (dark) root.classList.add('dark')
+          // 图片本体在 IndexedDB 里是异步读回来的，先用同步标记把根背景切透明，避免先闪一层不透明底色
+          if (p && p.hasBg === true) root.classList.add('has-bg')
         } catch (e) {
           /* 忽略 */
         }

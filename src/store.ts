@@ -142,6 +142,8 @@ export const st = reactive({
   /** 外观（背景图片存 IndexedDB，仅把 objectURL 放在内存里） */
   appearance: {
     imageUrl: '',
+    /** 是否已设置壁纸（同步持久化，用于首屏在 IndexedDB 读完前就切好半透明表面，避免闪一下不透明底色） */
+    hasImage: false,
     /** 图片可见度（0–100，越低遮罩越强） */
     opacity: 60,
     /** 背景图模糊度（px） */
@@ -679,6 +681,8 @@ interface UiPref {
   locale: string
   bgOpacity: number
   bgBlur: number
+  /** 是否已设置壁纸（同步标记，让首屏在 IndexedDB 读完前就切好透明根背景） */
+  hasBg: boolean
 }
 
 function loadUiPref(): UiPref {
@@ -687,6 +691,7 @@ function loadUiPref(): UiPref {
   let loc = ''
   let bgOpacity = 60
   let bgBlur = 0
+  let hasBg = false
   try {
     const raw = rawGet(UI_KEY)
     if (raw) {
@@ -696,12 +701,14 @@ function loadUiPref(): UiPref {
         locale?: unknown
         bgOpacity?: unknown
         bgBlur?: unknown
+        hasBg?: unknown
       }
       if (typeof p.dark === 'boolean') dark = p.dark
       if (typeof p.sidebarPinned === 'boolean') sidebarPinned = p.sidebarPinned
       if (isLocaleId(p.locale)) loc = p.locale
       if (typeof p.bgOpacity === 'number') bgOpacity = Math.max(0, Math.min(100, p.bgOpacity))
       if (typeof p.bgBlur === 'number') bgBlur = Math.max(0, Math.min(40, p.bgBlur))
+      if (typeof p.hasBg === 'boolean') hasBg = p.hasBg
     }
   } catch {
     /* 忽略 */
@@ -709,7 +716,7 @@ function loadUiPref(): UiPref {
   if (dark === null) {
     dark = !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)
   }
-  return { dark, sidebarPinned, locale: loc || detectLocale(), bgOpacity, bgBlur }
+  return { dark, sidebarPinned, locale: loc || detectLocale(), bgOpacity, bgBlur, hasBg }
 }
 
 function saveUiPref(): void {
@@ -721,6 +728,7 @@ function saveUiPref(): void {
       locale: locale.value,
       bgOpacity: st.appearance.opacity,
       bgBlur: st.appearance.blur,
+      hasBg: st.appearance.hasImage,
     }),
   )
 }
@@ -951,15 +959,22 @@ const BG_MAX_BYTES = 8 * 1024 * 1024
 let bgObjectUrl: string | null = null
 
 function syncBackgroundClass(): void {
-  // 把「是否有壁纸」挂到 <html> 上，与 .dark 同层，CSS 变量据此切换半透明表面
-  document.documentElement.classList.toggle('has-bg', !!st.appearance.imageUrl)
+  // 把「是否有壁纸」挂到 <html> 上，与 .dark 同层，CSS 变量据此切换半透明表面与透明根背景
+  document.documentElement.classList.toggle('has-bg', !!(st.appearance.imageUrl || st.appearance.hasImage))
+}
+
+/** 记录/清除「已设置壁纸」标记（同步写 localStorage，供下次首屏立即生效） */
+function markBackgroundPresent(present: boolean): void {
+  st.appearance.hasImage = present
+  syncBackgroundClass()
+  saveUiPref()
 }
 
 function applyBackgroundBlob(blob: Blob): void {
   if (bgObjectUrl) URL.revokeObjectURL(bgObjectUrl)
   bgObjectUrl = URL.createObjectURL(blob)
   st.appearance.imageUrl = bgObjectUrl
-  syncBackgroundClass()
+  markBackgroundPresent(true)
 }
 
 /** 启动时把上次保存的背景图从 IndexedDB 读回（objectURL 仅存活于当前会话） */
@@ -967,6 +982,12 @@ export async function loadBackgroundImage(): Promise<void> {
   if (!(await idbAvailable())) return
   const blob = await idbGet<Blob>(BG_KEY)
   if (blob instanceof Blob) applyBackgroundBlob(blob)
+  else if (st.appearance.hasImage) {
+    // 标记为有壁纸但 IndexedDB 里已不存在（例如换浏览器/被清理）：回收标记，避免一直用半透明表面
+    st.appearance.hasImage = false
+    syncBackgroundClass()
+    saveUiPref()
+  }
 }
 
 export async function setBackgroundImage(file: File): Promise<void> {
@@ -993,7 +1014,7 @@ export async function clearBackgroundImage(): Promise<void> {
     bgObjectUrl = null
   }
   st.appearance.imageUrl = ''
-  syncBackgroundClass()
+  markBackgroundPresent(false)
   showToast(t('settings.imageCleared'))
 }
 
@@ -1082,6 +1103,9 @@ export function init(): void {
   setLocale(pref.locale)
   st.appearance.opacity = pref.bgOpacity
   st.appearance.blur = pref.bgBlur
+  // 先用同步标记切好 has-bg（半透明表面 + 透明根背景），IndexedDB 里的图片随后异步补上
+  st.appearance.hasImage = pref.hasBg
+  syncBackgroundClass()
   void loadBackgroundImage()
   normalizeOrder()
   applyThemeClass()

@@ -57,6 +57,7 @@ env -u HTTP_PROXY -u HTTPS_PROXY npm install <pkg>
 
 ```
 litepad/
+├── .github/workflows/ci.yml # CI：main 推送/手动触发 → 类型检查、构建、发布 GitHub Pages
 ├── index.html              # 入口（防主题/壁纸闪烁脚本 + 站点图标/清单声明）
 ├── vite.config.ts          # 端口/允许的 Host、favicon 插件、__APP_VERSION__ / __APP_BUILD__ 注入
 ├── public/                 # favicon.ico / favicon-32.png / apple-touch-icon.png / site.webmanifest
@@ -129,6 +130,46 @@ README 顶部的图标**直接引用 `src/assets/favicon.svg`**（页内 LOGO �
 （`commit.gpgsign` / `tag.gpgsign` 为 true；AI 的 shell 是非交互的，签名失败时应请人执行 `gpg-unlock`，
 不要加 `--no-gpg-sign` 绕过）。
 
+## CI 与部署（GitHub Pages）
+
+`.github/workflows/ci.yml`：**main 分支每次推送**（以及 Actions 页面手动 `workflow_dispatch`）时，
+依次跑 类型检查 → 构建 → 校验产物路径 → 发布到 GitHub Pages。
+
+- 需要仓库设置里把 **Settings → Pages → Source 设为「GitHub Actions」**；在那之前 deploy 步骤会失败
+  （build 步骤仍会正常跑完并上传产物）；
+- Node 用 22（本地是 24，Vite 8 两者都支持），依赖走 `npm ci` + setup-node 的 npm 缓存；
+- `permissions` 需要 `pages: write` + `id-token: write`（deploy-pages 走 OIDC），
+  `concurrency: pages` 保证同一时间只有一次部署。
+
+### 子路径部署（最容易踩的坑）
+
+项目站点地址是 `https://<user>.github.io/<repo>/`，**不是根路径**，所以构建必须带 `base`：
+
+- workflow 按仓库名算出 `/litepad/`（用户主页仓库 `<user>.github.io` 则为 `/`），
+  再执行 `npm run build -- --base=/litepad/`；
+- 带 base 后有两处 Vite **不会**自动照顾好：
+  1. **插件 emit 出来的 `favicon.svg`**：它不属于 Vite 眼中的 public 资源，
+     HTML 里的 `href="/favicon.svg"` 不会被补前缀（同一份 HTML 里的 `/favicon.ico` 等来自 `public/`，
+     会被正常改写）→ 由 `vite.config.ts` 里 favicon 插件的 `transformIndexHtml`（`order: 'post'`）自己补；
+     dev 中间件同样先剥掉 base 前缀再比对 URL；
+  2. **`public/site.webmanifest` 内部的路径**：public 文件是原样拷贝、不会被改写 →
+     清单里的 `start_url` / `scope` / `icons[].src` 一律用**相对路径**，根路径与子路径两种部署都成立；
+- 部署前 workflow 会做一次**产物路径校验**：`dist/index.html` 里任何 `="/...` 的地址都必须带 base 前缀，
+  否则直接失败。这条检查是实测踩坑后加的 —— 第一次带 base 构建时 `favicon.svg` 就漏了前缀，
+  真发上去图标会 404。
+
+### 本地验证 Pages 产物
+
+```bash
+# 构造 Pages 形态的产物（输出到仓库外，避免触发 dev server 的 watch）
+npm run build -- --base=/litepad/ --outDir ../.pages-build --emptyOutDir
+node ../e2e/pages-build-check.cjs ../.pages-build /litepad/
+```
+
+`../e2e/pages-build-check.cjs` 把产物当成部署在 `/<repo>/` 下的站点跑起来（用 Playwright 的 route
+直接把文件喂给浏览器，不需要额外起服务），断言：应用启动、Monaco 挂载、worker/JS/CSS/图标/清单
+全部命中 base 前缀、零 404、零控制台报错、输入与自动保存正常。
+
 ## 测试与验证
 
 测试套件**不在本仓库内**，位于同级目录 `../e2e/`（Playwright + headless Chromium 驱动真实页面）。
@@ -147,6 +188,7 @@ README 顶部的图标**直接引用 `src/assets/favicon.svg`**（页内 LOGO �
 | `feature8-test` | 12 | 底栏排版（同字体/同行盒）与菜单 Esc 行为 |
 
 共 349 条。跑法：`node ../e2e/feature7-test.cjs`（需要开发服务器已在 18080 运行）。
+CI 里只跑 `typecheck` + `build` + 产物路径校验 —— 这些套件在仓库外，runner 上拿不到。
 
 断言策略：**优先断言真实渲染结果** —— 截图取像素（自写 PNG 解码）、读 token 的 computed color、
 量 Range 的实际行盒，而不是断言 class/变量存在。教训见 `IMPLEMENTATION.md` 的壁纸一节：

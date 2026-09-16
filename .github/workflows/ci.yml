@@ -1,0 +1,91 @@
+name: CI
+
+# main 每次推送：跑类型检查 + 构建，并把产物发布到 GitHub Pages；
+# 也可以在 Actions 页面手动触发（workflow_dispatch）。
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# 发布 Pages 需要：读代码 + 写 Pages + OIDC 令牌（deploy-pages 用）
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 同一时间只跑一个 Pages 部署；不打断已经在进行的部署
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: 构建
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 准备 Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 类型检查
+        run: npm run typecheck
+
+      # 项目站点是子路径（https://<user>.github.io/<repo>/），构建必须带 base，
+      # 否则产物里的 /assets/... 在 Pages 上会全部 404。
+      # 用户主页仓库（<user>.github.io）本身就是根路径。
+      - name: 计算 Pages 子路径
+        id: pages
+        run: |
+          repo="${GITHUB_REPOSITORY#*/}"
+          if [[ "$repo" == *.github.io ]]; then
+            base="/"
+          else
+            base="/$repo/"
+          fi
+          echo "base=$base" >> "$GITHUB_OUTPUT"
+          echo "构建 base = $base"
+
+      - name: 构建（vite build）
+        run: npm run build -- --base='${{ steps.pages.outputs.base }}'
+
+      # 上一步的坑真实踩过：插件在构建期 emit 的 favicon.svg 不会被 Vite 自动补 base 前缀，
+      # 结果子路径部署下图标 404。这里在部署前把产物再验一遍，避免把坏产物发上去。
+      - name: 校验产物里的路径前缀
+        run: |
+          set -euo pipefail
+          base='${{ steps.pages.outputs.base }}'
+          test -f dist/index.html || { echo "::error::构建产物缺少 dist/index.html"; exit 1; }
+          if [[ "$base" != "/" ]]; then
+            bad=$(grep -oE '(href|src)="/[^"]*"' dist/index.html | grep -v "\"$base" || true)
+            if [[ -n "$bad" ]]; then
+              echo "::error::产物里存在未加 base 前缀的绝对路径，子路径部署会 404"
+              echo "$bad"
+              exit 1
+            fi
+          fi
+          echo "路径前缀检查通过（base=$base）"
+
+      - name: 上传 Pages 产物
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    name: 发布到 GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: 部署
+        id: deployment
+        uses: actions/deploy-pages@v4

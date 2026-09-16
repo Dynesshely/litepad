@@ -44,6 +44,9 @@
 
 ## 快速开始
 
+> 不想本地跑？线上版本：<https://dynesshely.github.io/litepad/> ——
+> 由 GitHub Actions 从 `main` 构建发布；它和本地是**不同的浏览器源**，数据各自独立。
+
 ```bash
 npm install
 npm run dev        # 开发模式 http://0.0.0.0:18080

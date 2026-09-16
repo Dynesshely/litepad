@@ -22,14 +22,19 @@ const FAVICON_REL = 'src/assets/favicon.svg'
  */
 function faviconPlugin(): Plugin {
   let root = process.cwd()
+  let base = '/'
   return {
     name: 'litepad:favicon',
     configResolved(config) {
       root = config.root
+      // base 已被 Vite 规范化（一定带尾斜杠），子路径部署时形如 /litepad/
+      base = config.base
     },
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
-        const url = (req.url || '').split('?')[0]
+        let url = (req.url || '').split('?')[0]
+        // dev 也可能带 base（vite --base=/litepad/），先把前缀去掉再比对
+        if (base !== '/' && url.startsWith(base)) url = '/' + url.slice(base.length)
         if (url !== '/favicon.svg') {
           next()
           return
@@ -51,6 +56,18 @@ function faviconPlugin(): Plugin {
         fileName: 'favicon.svg',
         source: readFileSync(resolve(root, FAVICON_REL), 'utf8'),
       })
+    },
+    /**
+     * index.html 里的 `/favicon.svg` 必须自己补 base。
+     *
+     * 这个文件是本插件在构建期 emit 出来的，不属于 Vite 眼中的 public 资源，
+     * 因此 HTML 处理器不会给它加 base 前缀（同一份 HTML 里的 /favicon.ico、
+     * /site.webmanifest 等来自 public/，会被正常改写）。
+     * 子路径部署（GitHub Pages 的 /<repo>/）下不改写就会 404，所以由插件自己负责。
+     */
+    transformIndexHtml: {
+      order: 'post',
+      handler: (html) => html.replace(/(href|src)="\/favicon\.svg"/g, `$1="${base}favicon.svg"`),
     },
   }
 }

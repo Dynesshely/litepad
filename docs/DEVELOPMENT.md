@@ -135,8 +135,8 @@ README 顶部的图标**直接引用 `src/assets/favicon.svg`**（页内 LOGO �
 `.github/workflows/ci.yml`：**main 分支每次推送**（以及 Actions 页面手动 `workflow_dispatch`）时，
 依次跑 类型检查 → 构建 → 校验产物路径 → 发布到 GitHub Pages。
 
-- 需要仓库设置里把 **Settings → Pages → Source 设为「GitHub Actions」**；在那之前 deploy 步骤会失败
-  （build 步骤仍会正常跑完并上传产物）；
+- 需要仓库设置里把 **Settings → Pages → Source 设为「GitHub Actions」**；在那之前 workflow 会给出警告并跳过 deploy，
+  build 步骤仍会正常跑完并上传产物；设置完成后重新运行即可真正发布；
 - Node 用 22（本地是 24，Vite 8 两者都支持），依赖走 `npm ci` + setup-node 的 npm 缓存；
 - `permissions` 需要 `pages: write` + `id-token: write`（deploy-pages 走 OIDC），
   `concurrency: pages` 保证同一时间只有一次部署。

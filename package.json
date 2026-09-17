@@ -4,6 +4,7 @@
   "version": "0.1.2",
   "type": "module",
   "description": "Litepad：纯本地 localStorage 自动保存的网页编辑器（Vue 3 + Tailwind CSS + Monaco Editor）",
+  "license": "MIT",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

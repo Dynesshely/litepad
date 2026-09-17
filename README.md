@@ -168,4 +168,10 @@ emoji 在不同系统下字形与尺寸不一致，也无法跟随深浅色主�
 | [Monaco Editor](https://microsoft.github.io/monaco-editor/) | 编辑器内核（VS Code 同款） | MIT |
 | [Lucide](https://lucide.dev)（`@lucide/vue`） | 图标 | ISC |
 
-（本仓库目前尚未附带 LICENSE 文件。）
+## 许可
+
+本项目以 **MIT 许可证**发布，见 [`LICENSE`](./LICENSE) —— 你可以自由使用、修改、分发，
+包括商用与闭源再分发，只需保留版权声明与许可声明。
+
+`LICENSE` 是 [SPDX 官方文本库](https://github.com/spdx/license-list-data) 中 `text/MIT.txt` 的原文
+（仅填入署名行，未作改写）。

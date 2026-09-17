@@ -124,6 +124,15 @@ README 顶部的图标**直接引用 `src/assets/favicon.svg`**（页内 LOGO �
 基线在行盒内的位置由字体自身的 ascent/descent 决定（`(line-height − (A+D)) / 2 + A`），
 等宽字体与界面字体度量不同，会让那一项整体高约 1px。细节与断言见 `IMPLEMENTATION.md`。
 
+### 许可证
+
+项目以 **MIT** 发布（2026-09 决定）。`LICENSE` 取自
+[`spdx/license-list-data`](https://github.com/spdx/license-list-data) 的 `text/MIT.txt` **原文**，
+只把 `Copyright (c) <year> <copyright holders>` 换成署名行 —— 协议正文不要手打或改写，
+将来若换协议同理（这台机器的 HTTPS 到 GitHub 不通，可用
+`git clone --depth 1 --filter=blob:none --sparse` + `sparse-checkout set --no-cone '/text/<ID>.txt'` 经 SSH 取）。
+机器可读的标识同步写在 `package.json` 与 `package-lock.json` 的 `license` 字段。
+
 ### 提交约定
 
 提交按**功能点**分门别类（一个功能点一个提交，附带该功能点的测试结论），并一律走 GPG 签名
@@ -205,5 +214,4 @@ CI 里只跑 `typecheck` + `build` + 产物路径校验 —— 这些套件在�
 
 - `devctl status` 偶尔报 `portListening: false, portPid: null`，而 `ss -ltn` 显示 `0.0.0.0:18080`
   正在监听、`curl` 也是 200 —— 疑似 devctl 在「监听者与 launcher 同组」这种启动方式下端口探测误报；
-- 本仓库**尚无 LICENSE 文件**：真要开源发布前需要先定一个；
 - `legacy/scratch.html` 是最初原型，保留只为对照，随时可删。

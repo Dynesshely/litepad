@@ -11,6 +11,7 @@ import {
 import { encodingLabel } from '../lib/encoding'
 import { t } from '../lib/i18n'
 import { timeHM } from '../lib/format'
+import { ExternalLink } from '@lucide/vue'
 import EncodingMenu from './EncodingMenu.vue'
 import LanguageMenu from './LanguageMenu.vue'
 
@@ -43,6 +44,8 @@ const msgClass = computed(() => {
 })
 
 const encLabel = computed(() => encodingLabel(currentEncoding.value))
+/** origin 远端地址（构建期注入；没有 remote 时为空串，此时不显示入口） */
+const repoUrl = __APP_REPO__
 /** 保存状态文案随语言实时翻译（saveKey + 可选时间戳） */
 const saveText = computed(() => t(st.saveKey, { time: st.saveAt ? timeHM(st.saveAt) : '' }))
 
@@ -91,8 +94,25 @@ function onSelect(id: string): void {
       {{ st.quota }}
     </span>
 
-    <span v-if="st.chars" class="ml-auto tabular-nums">
-      {{ t('st.chars', { chars: st.chars, lines: st.lines }) }}
+    <!-- 右侧组：GitHub 仓库入口（地址在构建期从 git remote 注入）排在字符统计左侧 -->
+    <span class="ml-auto flex items-center gap-x-3">
+      <a
+        v-if="repoUrl"
+        data-testid="repo-link"
+        :href="repoUrl"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] transition-colors hover:bg-[var(--surface-2)] hover:text-indigo-600 dark:hover:text-indigo-300"
+        :title="t('repo.open')"
+        :aria-label="t('repo.open')"
+      >
+        <ExternalLink class="h-3.5 w-3.5" aria-hidden="true" />
+        <span class="hidden sm:inline">{{ t('repo.label') }}</span>
+      </a>
+
+      <span v-if="st.chars" data-testid="chars-count" class="tabular-nums">
+        {{ t('st.chars', { chars: st.chars, lines: st.lines }) }}
+      </span>
     </span>
 
     <EncodingMenu

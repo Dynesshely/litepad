@@ -111,7 +111,12 @@
   命令实现因此不依赖编辑器实例；
 - 版本号与构建号由 `vite.config.ts` 的 `define` 在构建期注入：`__APP_VERSION__` 取 `package.json`，
   `__APP_BUILD__` 取 `git rev-parse --short HEAD`（非 git 环境回退 `dev`）。
-  **改版本号后开发服务器要重启**，否则页面里还是旧值。
+  **改版本号后开发服务器要重启**，否则页面里还是旧值；
+- **底栏的 GitHub 入口**同样来自构建期注入的 `__APP_REPO__`：取 `git remote get-url origin`，
+  把 `git@host:owner/repo.git`、`ssh://…`、`https://….git` 统一归一成可点击的网页地址；
+  本地路径远端或没有 remote 时注入空串，UI 会**整个隐藏**这个入口（而不是留一个死链）。
+  CI 上 `actions/checkout` 会把 origin 设成仓库地址，因此 Pages 上的链接同样正确
+  —— `../e2e/pages-build-check.cjs` 会断言产物里的地址与本地 remote 一致。
 
 ## 底栏排版
 

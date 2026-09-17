@@ -93,7 +93,7 @@ litepad/
         ├── LocaleMenu.vue      # 界面语言切换菜单
         ├── LanguageMenu.vue    # 代码语言（着色）选择菜单
         ├── EncodingMenu.vue    # 编码选择菜单（含按编码导入 .txt）
-        ├── StatusBar.vue       # 保存状态 · 编码 · 语言 · 占用 · 字符统计
+        ├── StatusBar.vue       # 保存状态 · 编码 · 语言 · 占用 · GitHub 仓库入口 · 字符统计
         ├── DocList.vue         # 草稿列表（抽屉/固定面板共用，含拖动排序）
         ├── DocDrawer.vue       # 浮层抽屉外壳
         ├── HistoryModal.vue    # 历史快照弹层
@@ -198,6 +198,9 @@ node ../e2e/pages-build-check.cjs ../.pages-build /litepad/
 
 共 349 条。跑法：`node ../e2e/feature7-test.cjs`（需要开发服务器已在 18080 运行）。
 CI 里只跑 `typecheck` + `build` + 产物路径校验 —— 这些套件在仓库外，runner 上拿不到。
+
+> 跑套件前先确认 Vite 的 HMR 已经更新完毕：**刚改完源码就立刻开跑，偶发会撞上模块更新中途**
+> （表现是某一条无关断言失败，重跑即过；已遇到两次，未留下具体断言名）。
 
 断言策略：**优先断言真实渲染结果** —— 截图取像素（自写 PNG 解码）、读 token 的 computed color、
 量 Range 的实际行盒，而不是断言 class/变量存在。教训见 `IMPLEMENTATION.md` 的壁纸一节：

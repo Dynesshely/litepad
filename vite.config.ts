@@ -72,6 +72,34 @@ function faviconPlugin(): Plugin {
   }
 }
 
+/**
+ * origin 远端地址 → 浏览器可打开的网址。
+ * 支持 scp 形式（git@github.com:owner/repo.git）、ssh:// 与 http(s)；
+ * 本地路径远端或没有 remote 时返回空串，UI 会据此隐藏入口。
+ */
+function normalizeRemoteUrl(url: string): string {
+  const s = url.trim()
+  if (!s) return ''
+  const scp = /^(?:ssh:\/\/)?git@([^:/]+)[:/](.+?)(?:\.git)?$/.exec(s)
+  if (scp) return `https://${scp[1]}/${scp[2]}`
+  const clean = s.replace(/\.git$/, '')
+  return /^https?:\/\//.test(clean) ? clean : ''
+}
+
+/** 取 origin 的网页地址（拿不到则留空） */
+function gitRemoteUrl(): string {
+  try {
+    return normalizeRemoteUrl(
+      execFileSync('git', ['remote', 'get-url', 'origin'], {
+        cwd: fileURLToPath(new URL('.', import.meta.url)),
+        encoding: 'utf8',
+      }),
+    )
+  } catch {
+    return ''
+  }
+}
+
 /** 取当前 git 短哈希作为构建号（非 git 环境或未安装 git 时留空） */
 function gitShortSha(): string {
   try {
@@ -96,6 +124,7 @@ export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
     __APP_BUILD__: JSON.stringify(gitShortSha()),
+    __APP_REPO__: JSON.stringify(gitRemoteUrl()),
   },
   build: {
     target: 'es2022',

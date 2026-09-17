@@ -60,6 +60,8 @@ const messages: Record<LocaleId, Record<string, string>> = {
     'st.recovered': '已恢复',
     'st.undone': '已回退，可再点一次换回',
     'st.chars': '{chars} 字符 · {lines} 行',
+    'repo.label': 'GitHub',
+    'repo.open': '在 GitHub 上查看源码',
     'st.quota': '本页源占用 {size}',
     'st.quotaFull': '本页源占用 {size}（接近 5MB 上限，建议导出备份并清理）',
 
@@ -320,6 +322,8 @@ const messages: Record<LocaleId, Record<string, string>> = {
     'st.recovered': 'Restored',
     'st.undone': 'Rolled back — click again to redo',
     'st.chars': '{chars} chars · {lines} lines',
+    'repo.label': 'GitHub',
+    'repo.open': 'View source on GitHub',
     'st.quota': 'This origin: {size}',
     'st.quotaFull': 'This origin: {size} (near the 5 MB limit — export a backup and clean up)',
 

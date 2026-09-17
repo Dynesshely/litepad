@@ -84,8 +84,7 @@ litepad/
     │   └── download.ts     # Blob / 字节下载
     └── components/
         ├── MonacoEditor.vue    # Monaco 封装（每篇草稿独立 model / undo 栈）
-        ├── Toolbar.vue         # 顶栏（品牌=关于入口 / 新建 / 列表 / 历史 / 回退 / 命令菜单 /
-        │                       #       导出 / 设置 / 语言 / 主题 / GitHub 入口）
+        ├── Toolbar.vue         # 顶栏（新建/列表/翻页/命令菜单/导出/设置/语言/主题）
         ├── BrandLogo.vue       # 页内 LOGO（?raw 内联 src/assets/favicon.svg）
         ├── AboutModal.vue      # 「关于 Litepad」面板（macOS 版式 + 复制诊断信息）
         ├── SettingsModal.vue   # 设置弹窗（搜索顶栏 + 左侧分页/右侧内容）

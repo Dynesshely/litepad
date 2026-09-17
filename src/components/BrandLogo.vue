@@ -6,7 +6,7 @@
  */
 import faviconSvg from '../assets/favicon.svg?raw'
 
-withDefaults(defineProps<{ size?: 'sm' | 'md' | 'lg' }>(), { size: 'sm' })
+withDefaults(defineProps<{ size?: 'sm' | 'lg' }>(), { size: 'sm' })
 
 const logo = faviconSvg
   .replace(/<title>[\s\S]*?<\/title>/, '')
@@ -18,7 +18,7 @@ const logo = faviconSvg
   <span
     data-testid="brand-logo"
     :class="[
-      size === 'lg' ? 'h-16 w-16' : size === 'md' ? 'h-8 w-8' : 'h-6 w-6',
+      size === 'lg' ? 'h-16 w-16' : 'h-6 w-6',
       'inline-flex shrink-0 items-center justify-center [&>svg]:block [&>svg]:h-full [&>svg]:w-full',
     ]"
     v-html="logo"

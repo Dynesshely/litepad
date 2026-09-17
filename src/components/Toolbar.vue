@@ -3,7 +3,6 @@ import { ref } from 'vue'
 import {
   Command,
   Download,
-  ExternalLink,
   FilePlus2,
   History,
   Languages,
@@ -22,7 +21,6 @@ import {
   openHistory,
   openPalette,
   openSettings,
-  repoUrl,
   toggleDark,
   toggleSidebar,
   undoOneStep,
@@ -42,14 +40,14 @@ function onLocale(id: string): void {
   <header
     class="flex flex-wrap items-center gap-1.5 border-b border-zinc-200 bg-[var(--surface)] px-3 py-2 dark:border-zinc-800"
   >
-    <!-- 品牌区即「关于」入口：做成大号按钮（Logo + 名称），点一下打开关于面板 -->
+    <!-- 品牌区即「关于」入口（点 Logo 或名称打开，类似 macOS 的关于面板） -->
     <button
       data-testid="brand"
-      class="mr-2 flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-base font-semibold text-zinc-800 transition-colors select-none hover:bg-[var(--surface-2)] focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:outline-none active:scale-[0.98] dark:text-zinc-100"
+      class="mr-2 flex cursor-pointer select-none items-center gap-1.5 rounded-md px-1 py-0.5 text-sm font-semibold text-zinc-800 transition-colors hover:bg-[var(--surface-2)] dark:text-zinc-100"
       :title="t('about.open')"
       @click="openAbout()"
     >
-      <BrandLogo size="md" />
+      <BrandLogo />
       {{ t('app.title') }}
     </button>
 
@@ -122,19 +120,5 @@ function onLocale(id: string): void {
       <Sun v-if="st.dark" class="h-4 w-4" aria-hidden="true" />
       <Moon v-else class="h-4 w-4" aria-hidden="true" />
     </button>
-
-    <!-- 顶栏最右侧：GitHub 仓库入口（地址同样来自构建期注入的 git remote） -->
-    <a
-      v-if="repoUrl"
-      data-testid="repo-btn"
-      :href="repoUrl"
-      target="_blank"
-      rel="noopener noreferrer"
-      class="btn btn-icon"
-      :title="t('repo.open')"
-      :aria-label="t('repo.open')"
-    >
-      <ExternalLink class="h-4 w-4" aria-hidden="true" />
-    </a>
   </header>
 </template>

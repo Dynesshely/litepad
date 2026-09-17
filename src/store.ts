@@ -194,9 +194,6 @@ export const historyList = computed<Snap[]>(() =>
 /** 当前草稿的文本编码 */
 export const currentEncoding = computed<string>(() => encodingOf(st.currentId))
 
-/** origin 远端对应的网页地址（构建期注入；没有 remote 时为空串，此时入口整体隐藏） */
-export const repoUrl = __APP_REPO__
-
 /** 当前草稿的语言**模式**（可能是 `auto` 自动检测） */
 export const currentLang = computed<string>(() => langOf(st.currentId))
 

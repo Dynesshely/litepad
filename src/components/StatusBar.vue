@@ -4,6 +4,7 @@ import {
   closeLangMenu,
   currentEncoding,
   langDisplayName,
+  repoUrl,
   setCurrentEncoding,
   st,
   toggleLangMenu,
@@ -44,8 +45,6 @@ const msgClass = computed(() => {
 })
 
 const encLabel = computed(() => encodingLabel(currentEncoding.value))
-/** origin 远端地址（构建期注入；没有 remote 时为空串，此时不显示入口） */
-const repoUrl = __APP_REPO__
 /** 保存状态文案随语言实时翻译（saveKey + 可选时间戳） */
 const saveText = computed(() => t(st.saveKey, { time: st.saveAt ? timeHM(st.saveAt) : '' }))
 

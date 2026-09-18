@@ -191,6 +191,9 @@ node ../e2e/pages-build-check.cjs ../.pages-build /litepad/
 
 - 多阶段构建：`node:22-alpine`（`npm ci` + `npm run build`）→ `caddy:2-alpine` 只托管静态产物；
   容器内端口 **28080 = 本地 dev 端口 18080 + 10000**，`EXPOSE`/`Caddyfile`/compose 三处保持一致；
+- `Caddyfile` 的缓存头用「不是 `/assets/*`」这个补集匹配：只写 `header /index.html ...` 匹配不到
+  请求路径 `/`（SPA 回退返回的 HTML 同理）—— 实测踩过。起来后可以自查：
+  `curl -D- http://127.0.0.1:28080/ | grep -i cache-control`（应为 no-cache）
 - 镜像名 `dynecloud-litepad`，推送到 Harbor `registry.services.nimatattic.net` 的 `dynecloud` 项目，
   即 `registry.services.nimatattic.net/dynecloud/dynecloud-litepad:latest`
   （地址与写法来自 `DyneCloud/Blog-Site/image.push.ps1`）；

@@ -10,12 +10,14 @@
 	# （本应用用 hash 路由，正常不会触发；留着是为了刷新任意 URL 也能进应用）
 	try_files {path} /index.html
 
-	# 带内容哈希的产物（/assets/index-<hash>.js|css）可以长缓存；
-	# 入口 HTML 与清单必须每次校验，否则升级后拿到的还是旧页面。
+	# 带内容哈希的产物（/assets/index-<hash>.js|css）可以长缓存；其余一律 no-cache，
+	# 否则升级后浏览器还拿旧页面。
+	# 注意不能只写 `header /index.html ...`：请求 `/` 时路径就是 `/`，匹配不到 `/index.html`
+	# （SPA 回退返回的 HTML 同理）—— 实测踩过，所以这里用「不是 /assets/*」作为补集。
 	@hashed path /assets/*
 	header @hashed Cache-Control "public, max-age=31536000, immutable"
-	header /index.html Cache-Control "no-cache"
-	header /site.webmanifest Cache-Control "no-cache"
+	@notHashed not path /assets/*
+	header @notHashed Cache-Control "no-cache"
 
 	header {
 		X-Content-Type-Options nosniff

@@ -81,8 +81,10 @@ docker build --build-arg APP_BUILD=$(git rev-parse --short HEAD) \
              -t dynecloud-litepad:latest .
 ```
 
-推送与部署：`image.build.ps1` / `image.push.ps1`（与同组织的其它项目一致），
-镜像推到 `registry.services.nimatattic.net/dynecloud/dynecloud-litepad:latest`。
+推送与部署：`image.build.sh` / `image.push.sh`（Linux，检测到权限不足会自动用 `sudo docker`）
+或 `image.build.ps1` / `image.push.ps1`（Windows），镜像推到
+`registry.services.nimatattic.net/dynecloud/dynecloud-litepad:latest`。
+推送前需 `docker login registry.services.nimatattic.net`，且所用账号要对 `dynecloud` 项目有 push 权限。
 
 ## 使用
 

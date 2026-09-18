@@ -11,11 +11,11 @@ try {
     $remote = (git remote get-url origin).Trim()
     if ($remote -match '^(?:ssh://)?git@([^:/]+)[:/](.+?)(?:\.git)?$') {
         $repoUrl = "https://$($Matches[1])/$($Matches[2])"
-    } elseif ($remote -match '\.git$') {
-        $repoUrl = $remote -replace '\.git$', ''
     } else {
         $repoUrl = $remote
     }
+    # 统一去掉结尾的 .git（scp 形式的地址匹配后可能仍带后缀）
+    if ($repoUrl -match '\.git$') { $repoUrl = $repoUrl -replace '\.git$', '' }
 } catch { $repoUrl = "" }
 
 Write-Output ">>> Building image $imageName`:$dttag (APP_BUILD=$build, APP_REPO_URL=$repoUrl) ..."

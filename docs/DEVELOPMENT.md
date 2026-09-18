@@ -201,11 +201,41 @@ node ../e2e/pages-build-check.cjs ../.pages-build /litepad/
 - 容器里是用**根路径** `base=/` 构建的（Pages 那份才需要 `--base=/litepad/`），
   用 `node ../e2e/pages-build-check.cjs <产物目录> /` 可以按容器形态做一次自检。
 
-> **本机 AI 会话跑不了 docker**：`/var/run/docker.sock` 对本会话返回 permission denied
-> （`danger-full-access` 也不行；`sudo` 被 `no_new_privs` 拦住，也没有 rootless/podman 备用）。
-> 构建与推送请在终端自己执行：`pwsh ./image.build.ps1` + `pwsh ./image.push.ps1`，
-> 或直接用 README 里的 `docker build` / `docker push` 命令。
-> 另外 Harbor 需要认证（匿名访问 `/v2/` 返回 401），push 前先 `docker login registry.services.nimatattic.net`。
+### 构建/推送脚本
+
+| 脚本 | 平台 |
+| --- | --- |
+| `image.build.ps1` / `image.push.ps1` | Windows / PowerShell（与 DyneCloud 其它项目一致） |
+| `image.build.sh` / `image.push.sh` | Linux / macOS；探测到直连 `docker.sock` 无权限时**自动改用 `sudo docker`** |
+
+两个 `.sh` 里的 `git remote` → 网址换算与 `vite.config.ts` 的 `normalizeRemoteUrl` 行为一致
+（注意 bash 是 POSIX 正则会「最左最长」匹配，`(.+?)(\.git)?$` 不会像 JS 那样优先吃掉 `.git`，
+所以脚本里统一再 `%.git` 一次 —— 这个坑实测踩过）。
+
+> **本机 AI 会话跑不了 docker**（已从三个角度确认，不是沙箱策略问题）：
+> `/var/run/docker.sock` 真实属主是 `root:docker (0:983)`、权限 `660`，而 `docker` 组**没有任何成员**
+> （本机是靠 `sudo docker` 用的）；会话既不在该组，`sudo` 又被 `no_new_privs` 拦住，
+> 且没有 rootless socket / TCP 2375 / podman / buildah / skopeo / crane 等替代品。
+> 因此镜像构建与推送请在终端执行：`sudo ./image.build.sh && sudo ./image.push.sh`。
+> 若希望会话也能自己推，需要把运行 DSH 的用户加进 `docker` 组（`sudo usermod -aG docker <user>`）
+> 并重启 DSH 运行时让新组生效 —— 注意 `docker` 组等价于 root 权限。
+
+### Harbor 权限（实测）
+
+登录凭据存在 `~/.docker/config.json`（账号 `dev-01`），`GET /v2/` 带认证返回 200，
+但**该账号对 `dynecloud` 项目没有任何权限**：
+
+```bash
+# 用这个可以自查：返回的 JWT 里 access[0].actions 为空数组 = 无权限
+curl -s -u "$USER:$PASS" \
+  "https://registry.services.nimatattic.net/service/token?service=harbor-registry&scope=repository:dynecloud/dynecloud-litepad:pull,push"
+```
+
+实测结果：`dynecloud/*` 的 actions 恒为 `[]`，`GET /api/v2.0/projects/dynecloud` 返回 **403**，
+而该账号可见的项目只有 `customers`(projectAdmin) / `services`(maintainer) / `static-sites`(developer)
+/ `default` / `third-party`。也就是说：**不改权限的话，push 会被拒**（`denied: requested access to the resource is denied`）。
+解决方式二选一：在 Harbor 里把推送用的账号加进 `dynecloud` 项目（Developer 及以上）；
+或者改推该账号已有权限的项目（`static-sites` 下已有 `nimatattic-landing-*` 这类静态站镜像）。
 
 ## 测试与验证
 

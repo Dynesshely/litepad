@@ -173,6 +173,22 @@ README 顶部的图标**直接引用 `src/assets/favicon.svg`**（页内 LOGO �
   否则直接失败。这条检查是实测踩坑后加的 —— 第一次带 base 构建时 `favicon.svg` 就漏了前缀，
   真发上去图标会 404。
 
+### 验证 Harbor 上的镜像
+
+```bash
+bash ../e2e/docker-image-check.sh <构建号> [镜像引用]   # HTTP 层：Caddy 行为 + 构建期注入 + 端口
+node ../e2e/docker-app-smoke.cjs http://127.0.0.1:28080/   # 浏览器层：应用能否真的跑起来
+```
+
+`docker-image-check.sh` 把镜像跑起来逐项断言：入口 HTML 为 no-cache、`/assets/*` 为 immutable、
+文本自动 gzip、产物里的构建号等于构建时传入的值、仓库地址已注入、图标/清单可取、SPA 回退正常。
+`docker-app-smoke.cjs` 用 Playwright 打开容器提供的地址，断言 Monaco 挂载、可输入且自动保存、
+零 404 与零控制台报错（顺带覆盖 editor worker 分包能否从 Caddy 正常加载）。
+
+> 写这类校验时注意：**文本断言必须用 `curl --compressed`**。带 `Accept-Encoding: gzip`
+> 直接把响应存盘，存的是压缩字节，再 grep 明文永远找不到 —— 第一版校验脚本就是这么把
+> 「构建号已注入」和「仓库地址已注入」两条正常项误判成失败的。
+
 ### 本地验证 Pages 产物
 
 ```bash

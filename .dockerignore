@@ -1,0 +1,19 @@
+node_modules/
+dist/
+.git/
+.github/
+docs/
+legacy/
+.dev-server.log
+.dev-server.pid
+
+# 除 README 外的文档不必进构建上下文
+*.md
+!README.md
+
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.local
+npm-debug.log*

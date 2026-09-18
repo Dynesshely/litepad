@@ -110,7 +110,8 @@
 - 编辑器与 store 之间通过 `EditorSink` 桥接（读文本/单步替换/选中范围/跳转/聚焦），
   命令实现因此不依赖编辑器实例；
 - 版本号与构建号由 `vite.config.ts` 的 `define` 在构建期注入：`__APP_VERSION__` 取 `package.json`，
-  `__APP_BUILD__` 取 `git rev-parse --short HEAD`（非 git 环境回退 `dev`）。
+  `__APP_BUILD__` 取 `git rev-parse --short HEAD`（非 git 环境回退 `dev`；
+  容器构建里没有 `.git`，因此支持用 `APP_BUILD` 环境变量覆盖）。
   **改版本号后开发服务器要重启**，否则页面里还是旧值；
 - **底栏的 GitHub 入口**同样来自构建期注入的 `__APP_REPO__`：取 `git remote get-url origin`，
   把 `git@host:owner/repo.git`、`ssh://…`、`https://….git` 统一归一成可点击的网页地址；

@@ -1,0 +1,33 @@
+# Litepad 的静态文件服务配置（容器内监听 28080 = 本地 dev 端口 18080 + 10000）
+:28080 {
+	root * /srv
+	file_server
+
+	# 文本资源压缩（Caddy 会按 Accept-Encoding 自动选择）
+	encode zstd gzip
+
+	# 单页应用：找不到的路径回退到 index.html
+	# （本应用用 hash 路由，正常不会触发；留着是为了刷新任意 URL 也能进应用）
+	try_files {path} /index.html
+
+	# 带内容哈希的产物（/assets/index-<hash>.js|css）可以长缓存；
+	# 入口 HTML 与清单必须每次校验，否则升级后拿到的还是旧页面。
+	@hashed path /assets/*
+	header @hashed Cache-Control "public, max-age=31536000, immutable"
+	header /index.html Cache-Control "no-cache"
+	header /site.webmanifest Cache-Control "no-cache"
+
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+		# 刻意不设 CSP：index.html 里有一段防主题闪烁的内联脚本（需要 'unsafe-inline'），
+		# 而 Monaco 也依赖内联样式与 worker，硬上严格 CSP 会直接把编辑器或主题脚本打死。
+		# 要收紧的话得先给内联脚本改成 hash/nonce 白名单。
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}

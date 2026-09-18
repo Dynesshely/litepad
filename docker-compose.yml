@@ -1,0 +1,16 @@
+services:
+  litepad:
+    build:
+      context: .
+      args:
+        # 容器里没有 .git：构建号与仓库地址在构建时传进去（不传则回退 dev / 隐藏入口）
+        APP_BUILD: ${APP_BUILD:-dev}
+        APP_REPO_URL: ${APP_REPO_URL:-https://github.com/Dynesshely/litepad}
+    image: dynecloud-litepad:latest
+    container_name: dynecloud-litepad
+    ports:
+      - "28080:28080"
+    restart: unless-stopped
+
+    # 若直接使用 Harbor 上的镜像（不在本机构建），把上面 build 换成：
+    # image: registry.services.nimatattic.net/dynecloud/dynecloud-litepad:latest

@@ -62,6 +62,12 @@ litepad/
 ├── vite.config.ts          # 端口/允许的 Host、favicon 插件、__APP_VERSION__ / __APP_BUILD__ 注入
 ├── public/                 # favicon.ico / favicon-32.png / apple-touch-icon.png / site.webmanifest
 │                           #（favicon.svg 单一来源在 src/assets，由 Vite 插件在 dev 提供并输出到产物）
+├── Dockerfile              # 多阶段：node:22-alpine 构建 → caddy:2-alpine 托管 dist/（容器内 28080）
+├── Caddyfile               # Caddy 静态托管配置（压缩 / SPA 回退 / 缓存头 / 安全头）
+├── docker-compose.yml      # 本机构建 + 28080:28080 运行
+├── .dockerignore
+├── image.build.ps1         # 构建镜像并打时间戳标签（与 DyneCloud 其它项目同一套写法）
+├── image.push.ps1          # 打 Harbor 标签并推送
 ├── legacy/scratch.html     # 最初的零依赖单文件原型（同一套存储契约），可随时对照或删除
 ├── docs/                   # DEVELOPMENT.md（本文件） / IMPLEMENTATION.md（实现笔记）
 │                           # images/：README 里展示用的截图（overview-dark.png，2x 分辨率）
@@ -178,6 +184,28 @@ node ../e2e/pages-build-check.cjs ../.pages-build /litepad/
 `../e2e/pages-build-check.cjs` 把产物当成部署在 `/<repo>/` 下的站点跑起来（用 Playwright 的 route
 直接把文件喂给浏览器，不需要额外起服务），断言：应用启动、Monaco 挂载、worker/JS/CSS/图标/清单
 全部命中 base 前缀、零 404、零控制台报错、输入与自动保存正常。
+
+## Docker 与镜像发布
+
+约定沿用同组织其它项目（`~/projects/shared/DyneCloud/` 下的 Home / Blog-Site）：
+
+- 多阶段构建：`node:22-alpine`（`npm ci` + `npm run build`）→ `caddy:2-alpine` 只托管静态产物；
+  容器内端口 **28080 = 本地 dev 端口 18080 + 10000**，`EXPOSE`/`Caddyfile`/compose 三处保持一致；
+- 镜像名 `dynecloud-litepad`，推送到 Harbor `registry.services.nimatattic.net` 的 `dynecloud` 项目，
+  即 `registry.services.nimatattic.net/dynecloud/dynecloud-litepad:latest`
+  （地址与写法来自 `DyneCloud/Blog-Site/image.push.ps1`）；
+- **构建上下文里没有 `.git`**（`.dockerignore` 排除了），因此 `__APP_BUILD__` / `__APP_REPO__`
+  改由构建参数 `APP_BUILD` / `APP_REPO_URL` 注入（`vite.config.ts` 里优先读环境变量）；
+  `image.build.ps1` 会自动读取当前仓库的 `git rev-parse --short HEAD` 与 origin 传进去。
+  不传也能构建：构建号回退 `dev`，顶栏/底栏的 GitHub 入口自动隐藏；
+- 容器里是用**根路径** `base=/` 构建的（Pages 那份才需要 `--base=/litepad/`），
+  用 `node ../e2e/pages-build-check.cjs <产物目录> /` 可以按容器形态做一次自检。
+
+> **本机 AI 会话跑不了 docker**：`/var/run/docker.sock` 对本会话返回 permission denied
+> （`danger-full-access` 也不行；`sudo` 被 `no_new_privs` 拦住，也没有 rootless/podman 备用）。
+> 构建与推送请在终端自己执行：`pwsh ./image.build.ps1` + `pwsh ./image.push.ps1`，
+> 或直接用 README 里的 `docker build` / `docker push` 命令。
+> 另外 Harbor 需要认证（匿名访问 `/v2/` 返回 401），push 前先 `docker login registry.services.nimatattic.net`。
 
 ## 测试与验证
 

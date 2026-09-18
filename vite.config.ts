@@ -86,8 +86,13 @@ function normalizeRemoteUrl(url: string): string {
   return /^https?:\/\//.test(clean) ? clean : ''
 }
 
-/** 取 origin 的网页地址（拿不到则留空） */
+/**
+ * 取 origin 的网页地址（拿不到则留空）。
+ * 优先用 `APP_REPO_URL` 环境变量 —— 容器构建时没有 .git，只能靠构建参数传进来。
+ */
 function gitRemoteUrl(): string {
+  const fromEnv = process.env.APP_REPO_URL?.trim()
+  if (fromEnv) return normalizeRemoteUrl(fromEnv)
   try {
     return normalizeRemoteUrl(
       execFileSync('git', ['remote', 'get-url', 'origin'], {
@@ -100,15 +105,22 @@ function gitRemoteUrl(): string {
   }
 }
 
-/** 取当前 git 短哈希作为构建号（非 git 环境或未安装 git 时留空） */
-function gitShortSha(): string {
+/**
+ * 取构建号：优先 `APP_BUILD` 环境变量（容器构建用），否则取当前 git 短哈希，
+ * 都拿不到时回退 `dev`（非 git 环境、未安装 git、或 .git 不在构建上下文里）。
+ */
+function buildId(): string {
+  const fromEnv = process.env.APP_BUILD?.trim()
+  if (fromEnv) return fromEnv
   try {
-    return execFileSync('git', ['rev-parse', '--short', 'HEAD'], {
-      cwd: fileURLToPath(new URL('.', import.meta.url)),
-      encoding: 'utf8',
-    }).trim()
+    return (
+      execFileSync('git', ['rev-parse', '--short', 'HEAD'], {
+        cwd: fileURLToPath(new URL('.', import.meta.url)),
+        encoding: 'utf8',
+      }).trim() || 'dev'
+    )
   } catch {
-    return ''
+    return 'dev'
   }
 }
 
@@ -123,7 +135,7 @@ export default defineConfig({
   plugins: [vue(), tailwindcss(), faviconPlugin()],
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
-    __APP_BUILD__: JSON.stringify(gitShortSha()),
+    __APP_BUILD__: JSON.stringify(buildId()),
     __APP_REPO__: JSON.stringify(gitRemoteUrl()),
   },
   build: {

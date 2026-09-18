@@ -59,6 +59,31 @@ npm run typecheck  # vue-tsc 类型检查
 > 不同浏览器对 `file://` 页面的 `localStorage` 支持不一致（页面会自检并给出提示）。
 > 反向代理到自定义域名时，记得把域名加进 `vite.config.ts` 的 `server.allowedHosts`。
 
+## Docker 部署
+
+镜像为多阶段构建：`node:22-alpine` 里 `npm ci && npm run build`，再把 `dist/` 交给
+`caddy:2-alpine` 静态托管（配置见 `Caddyfile`），容器内监听 **28080**（= 本地 dev 端口 18080 + 10000）。
+
+```bash
+# 构建并运行
+docker build -t dynecloud-litepad:latest .
+docker run -d --name dynecloud-litepad -p 28080:28080 --restart unless-stopped dynecloud-litepad:latest
+# 或
+docker compose up -d --build
+```
+
+容器里没有 `.git`，所以构建号与仓库地址由构建参数传入（不传则构建号回退 `dev`、顶栏/底栏的
+GitHub 入口自动隐藏）：
+
+```bash
+docker build --build-arg APP_BUILD=$(git rev-parse --short HEAD) \
+             --build-arg APP_REPO_URL=https://github.com/Dynesshely/litepad \
+             -t dynecloud-litepad:latest .
+```
+
+推送与部署：`image.build.ps1` / `image.push.ps1`（与同组织的其它项目一致），
+镜像推到 `registry.services.nimatattic.net/dynecloud/dynecloud-litepad:latest`。
+
 ## 使用
 
 ### 草稿与自动保存
